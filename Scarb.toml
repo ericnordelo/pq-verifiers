@@ -1,0 +1,29 @@
+[workspace]
+members = [
+    "crates/bench_interface",
+    "crates/ecdsa_stark",
+    "crates/falcon_512",
+    "crates/ml_dsa_44",
+    "crates/poseidon_wots",
+    "crates/bench_targets",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024_07"
+cairo-version = "2.18.0"
+scarb-version = "2.18.0"
+authors = ["OpenZeppelin Community <maintainers@openzeppelin.org>"]
+license = "MIT"
+
+[workspace.dependencies]
+starknet = "2.18.0"
+snforge_std = "0.59.0"
+assert_macros = "2.18.0"
+# OZ test signing/deploy helpers, from the Scarb registry (keeps this repo self-contained).
+openzeppelin_testing = "6.7.0"
+# Internal crates.
+pqbench_interface = { path = "crates/bench_interface" }
+
+[workspace.tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]

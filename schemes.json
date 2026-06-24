@@ -1,0 +1,71 @@
+{
+  "schemes": [
+    {
+      "key": "ecdsa_stark",
+      "label": "ECDSA-STARK (baseline)",
+      "family": "classical EC",
+      "package": "pqbench_ecdsa_stark",
+      "verify_test": "bench_verify_ecdsa_stark",
+      "baseline_test": "bench_baseline_ecdsa_stark",
+      "validate_test": "bench_validate_ecdsa_stark",
+      "validate_baseline_test": "bench_validate_base_ecdsa_stark",
+      "contract": "EcdsaStarkAccount",
+      "nist_category": "n/a (not PQ)",
+      "standardized": "n/a",
+      "on_chain_hash": "Pedersen/Poseidon (tx hash)",
+      "offchain_prep": "none",
+      "sig_felts": 2,
+      "pubkey_felts": 1,
+      "implemented": true,
+      "notes": "Classical control. Shor-breakable; not a PQ candidate. Proves the pipeline."
+    },
+    {
+      "key": "falcon_512",
+      "label": "Falcon-512 (FN-DSA)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512",
+      "baseline_test": "bench_baseline_falcon_512",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206)",
+      "on_chain_hash": "SHAKE-256 hash-to-point (off-chain)",
+      "offchain_prep": "hash-to-point computed off-chain",
+      "sig_felts": 22,
+      "pubkey_felts": 29,
+      "implemented": false,
+      "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1."
+    },
+    {
+      "key": "ml_dsa_44",
+      "label": "ML-DSA-44 (Dilithium)",
+      "family": "lattice (module)",
+      "package": "pqbench_ml_dsa_44",
+      "verify_test": "bench_verify_ml_dsa_44",
+      "baseline_test": "bench_baseline_ml_dsa_44",
+      "nist_category": "2",
+      "standardized": "yes (FIPS 204)",
+      "on_chain_hash": "SHAKE-256 (on-chain)",
+      "offchain_prep": "none (all on-chain)",
+      "sig_felts": 79,
+      "pubkey_felts": 43,
+      "implemented": false,
+      "notes": "Finalized; robust signing. Expected SHAKE-dominated cost in Cairo."
+    },
+    {
+      "key": "poseidon_wots",
+      "label": "Poseidon-WOTS+ (hash-based)",
+      "family": "hash-based (non-standard)",
+      "package": "pqbench_poseidon_wots",
+      "verify_test": "bench_verify_poseidon_wots",
+      "baseline_test": "bench_baseline_poseidon_wots",
+      "nist_category": "TBD",
+      "standardized": "no (custom)",
+      "on_chain_hash": "Poseidon (on-chain)",
+      "offchain_prep": "none (all on-chain)",
+      "sig_felts": 560,
+      "pubkey_felts": 1,
+      "implemented": false,
+      "notes": "Cheapest Cairo compute; needs research-grade security analysis. Large signature."
+    }
+  ]
+}

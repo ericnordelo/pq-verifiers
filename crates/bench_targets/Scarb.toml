@@ -1,0 +1,25 @@
+[package]
+name = "pqbench_targets"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+starknet.workspace = true
+pqbench_interface.workspace = true
+pqbench_ecdsa_stark = { path = "../ecdsa_stark" }
+
+[dev-dependencies]
+snforge_std.workspace = true
+assert_macros.workspace = true
+openzeppelin_testing.workspace = true
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+sierra = true
+casm = true
+
+[tool]
+scarb.workspace = true

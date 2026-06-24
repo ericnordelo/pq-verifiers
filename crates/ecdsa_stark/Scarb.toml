@@ -1,0 +1,19 @@
+[package]
+name = "pqbench_ecdsa_stark"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+starknet.workspace = true
+pqbench_interface.workspace = true
+
+[dev-dependencies]
+snforge_std.workspace = true
+assert_macros.workspace = true
+openzeppelin_testing.workspace = true
+
+[tool]
+scarb.workspace = true

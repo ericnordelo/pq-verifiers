@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "generated": "2026-06-24 13:48",
+    "toolchain": {
+      "scarb": "2.18.0",
+      "snforge": "0.59.0",
+      "cairo_profiler": "0.8.0"
+    },
+    "caps": {
+      "validate_max_steps": 1000000,
+      "validate_max_l2_gas": 100000000
+    },
+    "gas_table_l2": {
+      "step": 100,
+      "range_check": 70,
+      "range_check96": 56,
+      "pedersen": 4050,
+      "poseidon": 491,
+      "bitwise": 583,
+      "ecdsa": 10561,
+      "ec_op": 4085,
+      "keccak": 136189,
+      "add_mod": 230,
+      "mul_mod": 604
+    },
+    "l2_gas_per_calldata_felt": 5120,
+    "method": "paired-test subtraction; L2 gas from sierra-gas mode; steps/builtins from cairo-steps mode"
+  },
+  "schemes": [
+    {
+      "key": "ecdsa_stark",
+      "label": "ECDSA-STARK (baseline)",
+      "family": "classical EC",
+      "package": "pqbench_ecdsa_stark",
+      "verify_test": "bench_verify_ecdsa_stark",
+      "baseline_test": "bench_baseline_ecdsa_stark",
+      "validate_test": "bench_validate_ecdsa_stark",
+      "validate_baseline_test": "bench_validate_base_ecdsa_stark",
+      "contract": "EcdsaStarkAccount",
+      "nist_category": "n/a (not PQ)",
+      "standardized": "n/a",
+      "on_chain_hash": "Pedersen/Poseidon (tx hash)",
+      "offchain_prep": "none",
+      "sig_felts": 2,
+      "pubkey_felts": 1,
+      "implemented": true,
+      "notes": "Classical control. Shor-breakable; not a PQ candidate. Proves the pipeline.",
+      "measured": true,
+      "verify_l2_gas": 30855,
+      "verify_steps": 152,
+      "verify_builtins": {
+        "range_check": 7,
+        "ec_op": 3
+      },
+      "calldata_l2_gas": 15360,
+      "pct_of_gas_cap": 0.0309,
+      "pct_of_step_cap": 0.0152,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "validate_l2_gas": 160795,
+      "validate_steps": 1437,
+      "validate_pct_of_gas_cap": 0.1608,
+      "validate_pct_of_step_cap": 0.1437,
+      "validate_fits": true,
+      "class_felts": 784,
+      "class_bytes": 20542,
+      "verify_profile": [
+        {
+          "function": "core::ecdsa::check_ecdsa_signature",
+          "flat_steps": 127,
+          "flat_pct": 37.46,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ecdsa_stark_integrationtest::bench::bench_verify_ecdsa_stark",
+          "flat_steps": 109,
+          "flat_pct": 32.15,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 57,
+          "flat_pct": 16.81,
+          "harness": true
+        },
+        {
+          "function": "pqbench_ecdsa_stark_integrationtest::bench::bench_verify_ecdsa_stark__snforge_internal_test_generated",
+          "flat_steps": 26,
+          "flat_pct": 7.67,
+          "harness": true
+        },
+        {
+          "function": "core::result::ResultSerde::deserialize",
+          "flat_steps": 19,
+          "flat_pct": 5.6,
+          "harness": true
+        },
+        {
+          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
+          "flat_steps": 1,
+          "flat_pct": 0.29,
+          "harness": true
+        }
+      ]
+    },
+    {
+      "key": "falcon_512",
+      "label": "Falcon-512 (FN-DSA)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512",
+      "baseline_test": "bench_baseline_falcon_512",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206)",
+      "on_chain_hash": "SHAKE-256 hash-to-point (off-chain)",
+      "offchain_prep": "hash-to-point computed off-chain",
+      "sig_felts": 22,
+      "pubkey_felts": 29,
+      "implemented": false,
+      "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1.",
+      "measured": false
+    },
+    {
+      "key": "ml_dsa_44",
+      "label": "ML-DSA-44 (Dilithium)",
+      "family": "lattice (module)",
+      "package": "pqbench_ml_dsa_44",
+      "verify_test": "bench_verify_ml_dsa_44",
+      "baseline_test": "bench_baseline_ml_dsa_44",
+      "nist_category": "2",
+      "standardized": "yes (FIPS 204)",
+      "on_chain_hash": "SHAKE-256 (on-chain)",
+      "offchain_prep": "none (all on-chain)",
+      "sig_felts": 79,
+      "pubkey_felts": 43,
+      "implemented": false,
+      "notes": "Finalized; robust signing. Expected SHAKE-dominated cost in Cairo.",
+      "measured": false
+    },
+    {
+      "key": "poseidon_wots",
+      "label": "Poseidon-WOTS+ (hash-based)",
+      "family": "hash-based (non-standard)",
+      "package": "pqbench_poseidon_wots",
+      "verify_test": "bench_verify_poseidon_wots",
+      "baseline_test": "bench_baseline_poseidon_wots",
+      "nist_category": "TBD",
+      "standardized": "no (custom)",
+      "on_chain_hash": "Poseidon (on-chain)",
+      "offchain_prep": "none (all on-chain)",
+      "sig_felts": 560,
+      "pubkey_felts": 1,
+      "implemented": false,
+      "notes": "Cheapest Cairo compute; needs research-grade security analysis. Large signature.",
+      "measured": false
+    }
+  ]
+}

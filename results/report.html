@@ -1,0 +1,96 @@
+<!doctype html><meta charset=utf-8>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0; padding: 2rem; line-height: 1.6; color: #1a1a1a; background: #fafafa; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
+h2 { font-size: 18px; font-weight: 600; margin: 2.25rem 0 .75rem; }
+.sub { color: #666; font-size: 14px; margin: 0 0 1.5rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin: 1.25rem 0; }
+.card { background: #fff; border: 1px solid #e6e6e6; border-radius: 10px; padding: .85rem 1rem; }
+.card .l { font-size: 12px; color: #777; text-transform: uppercase; letter-spacing: .03em; }
+.card .v { font-size: 22px; font-weight: 600; margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff;
+  border: 1px solid #e6e6e6; border-radius: 10px; overflow: hidden; }
+th, td { text-align: right; padding: 9px 12px; border-bottom: 1px solid #f0f0f0; }
+th:first-child, td:first-child { text-align: left; }
+th { background: #f6f6f6; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
+th:hover { background: #efefef; }
+tr:last-child td { border-bottom: none; }
+.mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.ok { background: #e6f4ea; color: #1d6f3f; }
+.no { background: #fdecea; color: #a3281f; }
+.pending { background: #fff4e0; color: #8a5a0b; }
+.barrow { display: grid; grid-template-columns: 200px 1fr 150px; align-items: center; gap: 12px; margin: 6px 0; }
+.barlabel { font-size: 13px; color: #333; }
+.track { background: #f0f0f0; border-radius: 5px; height: 18px; overflow: hidden; }
+.fill { height: 100%; border-radius: 5px; }
+.barval { font-size: 13px; color: #555; text-align: right; }
+.note { color: #666; font-size: 13px; }
+details { margin: .5rem 0; } summary { cursor: pointer; font-size: 14px; color: #444; }
+footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid #e6e6e6; color: #777; font-size: 13px; }
+code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+<div class="wrap">
+<h1>Post-quantum signature verifiers &mdash; Starknet benchmark</h1>
+<p class="sub">Generated 2026-06-24 13:48 &middot; scarb 2.18.0, snforge 0.59.0 &middot; cost of verifying one signature inside an account validation.</p>
+<div class="cards">
+<div class="card"><div class="l">Measured</div><div class="v">1</div></div>
+<div class="card"><div class="l">Pending</div><div class="v">3</div></div>
+<div class="card"><div class="l">Validate gas cap</div><div class="v">100M</div></div>
+<div class="card"><div class="l">Validate step cap</div><div class="v">1000k</div></div>
+</div>
+<h2>Measured verifiers</h2>
+<table id="t"><thead><tr><th onclick="sortTable(t,0,false)">Scheme</th><th onclick="sortTable(t,1,false)">Family</th><th onclick="sortTable(t,2,true)">L2 gas</th><th onclick="sortTable(t,3,true)">% gas cap</th><th onclick="sortTable(t,4,true)">Steps</th><th onclick="sortTable(t,5,true)">% step cap</th><th onclick="sortTable(t,6,true)">Sig (felts)</th><th onclick="sortTable(t,7,true)">PubKey (felts)</th><th onclick="sortTable(t,8,true)">Calldata L2 gas</th><th onclick="sortTable(t,9,false)">Fits caps</th></tr></thead><tbody>
+<tr><td data-v="ECDSA-STARK (baseline)">ECDSA-STARK (baseline)</td><td data-v="classical EC">classical EC</td><td class="mono" data-v="30855">30,855</td><td class="mono" data-v="0.0309">0.0309%</td><td class="mono" data-v="152">152</td><td class="mono" data-v="0.0152">0.0152%</td><td class="mono" data-v="2">2</td><td class="mono" data-v="1">1</td><td class="mono" data-v="15360">15,360</td><td data-v="True"><span class="badge ok">yes</span></td></tr>
+</tbody></table>
+<h2>Verification L2 gas (relative)</h2>
+<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:100.0%;background:#185FA5"></div></div><div class="barval mono">30,855  (0.0309% cap)</div></div>
+<h2>Verification steps (relative)</h2>
+<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:100.0%;background:#0F6E56"></div></div><div class="barval mono">152  (0.0152% cap)</div></div>
+<h2>Where the cost goes</h2>
+<p class="note"><b>ECDSA-STARK (baseline)</b> &mdash; builtins: ec_op: 3, range_check: 7</p>
+<details><summary>step attribution (top functions inside verify)</summary><table><thead><tr><th>Function</th><th>Steps (flat)</th><th>% of test</th></tr></thead><tbody>
+<tr><td style="text-align:left" class="mono">core::ecdsa::check_ecdsa_signature</td><td class="mono">127</td><td class="mono">37.46%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_ecdsa_stark_integrationtest::bench::bench_verify_ecdsa_stark</td><td class="mono">109</td><td class="mono">32.15%</td></tr>
+</tbody></table></details>
+<h2>Realistic cost in __validate__ (deploy + call, baseline-subtracted)</h2>
+<p class="note">Adds call dispatch, tx-info read (signature deserialization) and storage read on top of bare verification &mdash; the cost an account actually pays during validation.</p>
+<table><thead><tr><th>Scheme</th><th>__validate__ L2 gas</th><th>% gas cap</th><th>Steps</th><th>% step cap</th><th>Bare verify L2 gas</th><th>Class (bytes)</th><th>Fits caps</th></tr></thead><tbody>
+<tr><td>ECDSA-STARK (baseline)</td><td class="mono">160,795</td><td class="mono">0.1608%</td><td class="mono">1,437</td><td class="mono">0.1437%</td><td class="mono">30,855</td><td class="mono">20,542</td><td><span class="badge ok">yes</span></td></tr>
+</tbody></table>
+<h2>On-chain footprint (signature + public key, felts)</h2>
+<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:1.0%;background:#D85A30"></div></div><div class="barval mono">3 felts (2+1)</div></div>
+<div class="barrow"><div class="barlabel">Falcon-512 (FN-DSA)</div><div class="track"><div class="fill" style="width:9.09%;background:#D85A30"></div></div><div class="barval mono">51 felts (22+29)</div></div>
+<div class="barrow"><div class="barlabel">ML-DSA-44 (Dilithium)</div><div class="track"><div class="fill" style="width:21.75%;background:#D85A30"></div></div><div class="barval mono">122 felts (79+43)</div></div>
+<div class="barrow"><div class="barlabel">Poseidon-WOTS+ (hash-based)</div><div class="track"><div class="fill" style="width:100.0%;background:#D85A30"></div></div><div class="barval mono">561 felts (560+1)</div></div>
+<h2>Pending implementation</h2>
+<table><thead><tr><th>Scheme</th><th>Family</th><th>NIST cat</th><th>Standardized</th><th>On-chain hash</th><th>Status</th></tr></thead><tbody>
+<tr><td>Falcon-512 (FN-DSA)</td><td>lattice (NTRU)</td><td class="mono">1</td><td>draft (FIPS 206)</td><td>SHAKE-256 hash-to-point (off-chain)</td><td><span class="badge pending">stub</span></td></tr>
+<tr><td>ML-DSA-44 (Dilithium)</td><td>lattice (module)</td><td class="mono">2</td><td>yes (FIPS 204)</td><td>SHAKE-256 (on-chain)</td><td><span class="badge pending">stub</span></td></tr>
+<tr><td>Poseidon-WOTS+ (hash-based)</td><td>hash-based (non-standard)</td><td class="mono">TBD</td><td>no (custom)</td><td>Poseidon (on-chain)</td><td><span class="badge pending">stub</span></td></tr>
+</tbody></table>
+<p class="note"><b>Falcon-512 (FN-DSA)</b> &mdash; Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1.</p>
+<p class="note"><b>ML-DSA-44 (Dilithium)</b> &mdash; Finalized; robust signing. Expected SHAKE-dominated cost in Cairo.</p>
+<p class="note"><b>Poseidon-WOTS+ (hash-based)</b> &mdash; Cheapest Cairo compute; needs research-grade security analysis. Large signature.</p>
+<footer>
+<p><b>Method.</b> paired-test subtraction; L2 gas from sierra-gas mode; steps/builtins from cairo-steps mode.</p>
+<p><b>Caps.</b> validate: 1,000,000 steps / 100,000,000 L2 gas. Calldata: 5,120 L2 gas/felt.</p>
+<p><b>L2 gas table.</b> <span class="mono">step=100, range_check=70, range_check96=56, pedersen=4050, poseidon=491, bitwise=583, ecdsa=10561, ec_op=4085, keccak=136189, add_mod=230, mul_mod=604</span></p>
+</footer></div>
+<script>
+function sortTable(t, col, numeric) {
+  var tbody = t.tBodies[0], rows = Array.prototype.slice.call(tbody.rows);
+  var dir = t.getAttribute('data-dir-' + col) === 'asc' ? -1 : 1;
+  t.setAttribute('data-dir-' + col, dir === 1 ? 'asc' : 'desc');
+  rows.sort(function(a, b) {
+    var x = a.cells[col].getAttribute('data-v'), y = b.cells[col].getAttribute('data-v');
+    if (numeric) return (parseFloat(x) - parseFloat(y)) * dir;
+    return x.localeCompare(y) * dir;
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+</script>
