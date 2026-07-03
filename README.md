@@ -33,9 +33,11 @@ Current efficiency of every measured entry, per crate (the values pinned in
 | Crate | Measurement | L2 gas | Steps | % of gas cap |
 |---|---|--:|--:|--:|
 | [`ecdsa_stark`](crates/ecdsa_stark) | verify (classical control) | 30,855 | 152 | 0.03% |
-| [`bench_targets`](crates/bench_targets) | ECDSA-STARK account, inside `__validate__` | 160,795 | 1,437 | 0.16% |
 | [`falcon_512`](crates/falcon_512) | verify, hint variant | 35,643,340 | 322,958 | 35.6% |
 | [`falcon_512`](crates/falcon_512) | verify, direct variant | 37,190,480 | 340,697 | 37.2% |
+| [`bench_targets`](crates/bench_targets) | ECDSA-STARK account, inside `__validate__` | 160,795 | 1,437 | 0.16% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 hint account, inside `__validate__` | 37,213,800 | 337,228 | 37.2% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 direct account, inside `__validate__` | 38,710,030 | 354,481 | 38.7% |
 | [`ntt`](crates/ntt) | forward 512-point transform | 8,895,740 | 81,826 | 8.9% |
 | [`ntt`](crates/ntt) | forward + inverse roundtrip | 22,725,980 | 211,044 | 22.7% |
 | [`ml_dsa_44`](crates/ml_dsa_44) | verify | stub — not yet measured | — | — |
@@ -50,7 +52,10 @@ validation caps. Their transforms run on the shared lazy-reduction NTT engine
 transform); storing the public key in the NTT domain is what keeps either variant at two
 transforms. The direct variant carries half the signature calldata (31 vs 60 felts) and
 no signer-supplied hint, at a ~4% cost premium (its inverse transform versus the hint's
-second forward one). The remaining PQ verifiers are scaffolded behind the same interface.
+second forward one). Both also have account contracts measured inside `__validate__`: the
+realistic cost sits just above bare verify, because the verifier dominates and the account
+overhead (deploy dispatch, reading the 29-slot key, deserialization) is small in relative
+terms. The remaining PQ verifiers are scaffolded behind the same interface.
 
 ## Report
 

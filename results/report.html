@@ -36,7 +36,7 @@ code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 13p
 </style>
 <div class="wrap">
 <h1>Post-quantum signature verifiers &mdash; Starknet benchmark</h1>
-<p class="sub">Generated 2026-07-03 14:35 &middot; scarb 2.18.0, snforge 0.59.0 &middot; cost of verifying one signature inside an account validation.</p>
+<p class="sub">Generated 2026-07-03 16:34 &middot; scarb 2.18.0, snforge 0.59.0 &middot; cost of verifying one signature inside an account validation.</p>
 <div class="cards">
 <div class="card"><div class="l">Measured</div><div class="v">3</div></div>
 <div class="card"><div class="l">Pending</div><div class="v">2</div></div>
@@ -67,8 +67,8 @@ code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 13p
 <details><summary>step attribution (top functions inside verify)</summary><table><thead><tr><th>Function</th><th>Steps (flat)</th><th>% of test</th></tr></thead><tbody>
 <tr><td style="text-align:left" class="mono">pqbench_falcon_512::falcon::verify_512_with_hint[1147-1717]</td><td class="mono">49,336</td><td class="mono">15.27%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_falcon_512::packing::unpack_half[315-469]</td><td class="mono">47,589</td><td class="mono">14.73%</td></tr>
-<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[520-1822]</td><td class="mono">40,920</td><td class="mono">12.66%</td></tr>
-<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[2011-2286]</td><td class="mono">38,656</td><td class="mono">11.96%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[527-1829]</td><td class="mono">40,920</td><td class="mono">12.66%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[2018-2293]</td><td class="mono">38,656</td><td class="mono">11.96%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_ntt::engine::reduce_pass[256-1385]</td><td class="mono">33,856</td><td class="mono">10.48%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_ntt::engine::ntt[839-1096]</td><td class="mono">21,024</td><td class="mono">6.51%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]</td><td class="mono">19,936</td><td class="mono">6.17%</td></tr>
@@ -81,14 +81,16 @@ code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 13p
 <tr><td style="text-align:left" class="mono">pqbench_ntt::engine::split_level[519-1227]</td><td class="mono">27,756</td><td class="mono">8.13%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_ntt::engine::reduce_pass[256-1385]</td><td class="mono">25,648</td><td class="mono">7.51%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_ntt::engine::split_level[1722-1989]</td><td class="mono">21,888</td><td class="mono">6.41%</td></tr>
-<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[520-1822]</td><td class="mono">20,460</td><td class="mono">5.99%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[527-1829]</td><td class="mono">20,460</td><td class="mono">5.99%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]</td><td class="mono">19,936</td><td class="mono">5.84%</td></tr>
-<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[2011-2286]</td><td class="mono">19,328</td><td class="mono">5.66%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_ntt::engine::merge_level[2018-2293]</td><td class="mono">19,328</td><td class="mono">5.66%</td></tr>
 </tbody></table></details>
 <h2>Realistic cost in __validate__ (deploy + call, baseline-subtracted)</h2>
 <p class="note">Adds call dispatch, tx-info read (signature deserialization) and storage read on top of bare verification &mdash; the cost an account actually pays during validation.</p>
 <table><thead><tr><th>Scheme</th><th>__validate__ L2 gas</th><th>% gas cap</th><th>Steps</th><th>% step cap</th><th>Bare verify L2 gas</th><th>Class (bytes)</th><th>Fits caps</th></tr></thead><tbody>
-<tr><td>ECDSA-STARK (baseline)</td><td class="mono">160,795</td><td class="mono">0.1608%</td><td class="mono">1,437</td><td class="mono">0.1437%</td><td class="mono">30,855</td><td class="mono">20,542</td><td><span class="badge ok">yes</span></td></tr>
+<tr><td>ECDSA-STARK (baseline)</td><td class="mono">160,795</td><td class="mono">0.1608%</td><td class="mono">1,437</td><td class="mono">0.1437%</td><td class="mono">30,855</td><td class="mono">20,555</td><td><span class="badge ok">yes</span></td></tr>
+<tr><td>Falcon-512 (FN-DSA)</td><td class="mono">37,213,800</td><td class="mono">37.2138%</td><td class="mono">337,228</td><td class="mono">33.7228%</td><td class="mono">35,643,340</td><td class="mono">247,348</td><td><span class="badge ok">yes</span></td></tr>
+<tr><td>Falcon-512 direct (no hint)</td><td class="mono">38,710,030</td><td class="mono">38.71%</td><td class="mono">354,481</td><td class="mono">35.4481%</td><td class="mono">37,190,480</td><td class="mono">285,649</td><td><span class="badge ok">yes</span></td></tr>
 </tbody></table>
 <h2>On-chain footprint (signature + public key, felts)</h2>
 <div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:1.0%;background:#D85A30"></div></div><div class="barval mono">3 felts (2+1)</div></div>

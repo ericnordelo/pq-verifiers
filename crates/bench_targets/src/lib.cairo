@@ -9,6 +9,7 @@
 //! Building these contracts also yields each scheme's contract-class size.
 
 pub mod ecdsa_stark;
+pub mod falcon_512;
 
 /// Minimal account-validation surface every benchmark account exposes.
 #[starknet::interface]

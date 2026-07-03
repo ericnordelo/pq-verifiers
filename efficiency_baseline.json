@@ -46,6 +46,20 @@
       "baseline": "bench_baseline_falcon_512_direct",
       "l2_gas": 37190480,
       "steps": 340697
+    },
+    "falcon_512_validate": {
+      "package": "pqbench_targets",
+      "test": "bench_validate_falcon_512",
+      "baseline": "bench_validate_base_falcon_512",
+      "l2_gas": 37213800,
+      "steps": 337228
+    },
+    "falcon_512_direct_validate": {
+      "package": "pqbench_targets",
+      "test": "bench_validate_falcon_512_direct",
+      "baseline": "bench_validate_base_falcon_512_direct",
+      "l2_gas": 38710030,
+      "steps": 354481
     }
   }
 }

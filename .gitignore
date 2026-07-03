@@ -1,5 +1,12 @@
+# starknet
 target/
 .snfoundry_cache/
 snfoundry_trace/
 *.pb.gz
+
+# python
 __pycache__/
+
+# js/ts
+dist/
+node_modules/

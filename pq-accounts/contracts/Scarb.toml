@@ -1,5 +1,5 @@
 [package]
-name = "pqbench_targets"
+name = "pq_accounts"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -9,13 +9,8 @@ authors.workspace = true
 [dependencies]
 starknet.workspace = true
 pqbench_interface.workspace = true
-pqbench_ecdsa_stark = { path = "../ecdsa_stark" }
-pqbench_falcon_512 = { path = "../falcon_512" }
-
-[dev-dependencies]
-snforge_std.workspace = true
-assert_macros.workspace = true
-openzeppelin_testing.workspace = true
+pqbench_ecdsa_stark = { path = "../../crates/ecdsa_stark" }
+pqbench_falcon_512 = { path = "../../crates/falcon_512" }
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"

@@ -1,0 +1,29 @@
+{
+  "name": "@pq-verifiers/pq-accounts-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI for deploying and sending Starknet account transactions with pq-verifiers signature adapters.",
+  "type": "module",
+  "bin": {
+    "pq-accounts": "./dist/index.js",
+    "pq-account": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "starknet": "^10.0.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

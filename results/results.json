@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-07-03 14:35",
+    "generated": "2026-07-03 16:34",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -49,8 +49,8 @@
       "verify_l2_gas": 30855,
       "verify_steps": 152,
       "verify_builtins": {
-        "ec_op": 3,
-        "range_check": 7
+        "range_check": 7,
+        "ec_op": 3
       },
       "calldata_l2_gas": 15360,
       "pct_of_gas_cap": 0.0309,
@@ -63,7 +63,7 @@
       "validate_pct_of_step_cap": 0.1437,
       "validate_fits": true,
       "class_felts": 784,
-      "class_bytes": 20542,
+      "class_bytes": 20555,
       "verify_profile": [
         {
           "function": "core::ecdsa::check_ecdsa_signature",
@@ -110,6 +110,9 @@
       "package": "pqbench_falcon_512",
       "verify_test": "bench_verify_falcon_512",
       "baseline_test": "bench_baseline_falcon_512",
+      "validate_test": "bench_validate_falcon_512",
+      "validate_baseline_test": "bench_validate_base_falcon_512",
+      "contract": "Falcon512Account",
       "nist_category": "1",
       "standardized": "draft (FIPS 206); hash-to-point XOF swapped to BLAKE2s (non-standard)",
       "on_chain_hash": "BLAKE2s hash-to-point (on-chain)",
@@ -129,6 +132,13 @@
       "pct_of_step_cap": 32.2958,
       "fits_gas_cap": true,
       "fits_step_cap": true,
+      "validate_l2_gas": 37213800,
+      "validate_steps": 337228,
+      "validate_pct_of_gas_cap": 37.2138,
+      "validate_pct_of_step_cap": 33.7228,
+      "validate_fits": true,
+      "class_felts": 9103,
+      "class_bytes": 247348,
       "verify_profile": [
         {
           "function": "pqbench_falcon_512::falcon::verify_512_with_hint[1147-1717]",
@@ -143,13 +153,13 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[520-1822]",
+          "function": "pqbench_ntt::engine::merge_level[527-1829]",
           "flat_steps": 40920,
           "flat_pct": 12.66,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[2011-2286]",
+          "function": "pqbench_ntt::engine::merge_level[2018-2293]",
           "flat_steps": 38656,
           "flat_pct": 11.96,
           "harness": false
@@ -185,7 +195,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[1869-2320]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
           "flat_steps": 13488,
           "flat_pct": 4.17,
           "harness": false
@@ -197,13 +207,13 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[1869-2320]",
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]",
           "flat_steps": 6956,
           "flat_pct": 2.15,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[378-1856]",
+          "function": "pqbench_ntt::engine::merge_level[385-1863]",
           "flat_steps": 6426,
           "flat_pct": 1.99,
           "harness": false
@@ -221,7 +231,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[378-1856]{NotSpecialized, 0, NotSpecialized, NotSpecialized, array![], NotSpecialized, NotSpecialized, }",
+          "function": "pqbench_ntt::engine::merge_level[385-1863]{NotSpecialized, 0, NotSpecialized, NotSpecialized, array![], NotSpecialized, NotSpecialized, }",
           "flat_steps": 576,
           "flat_pct": 0.18,
           "harness": false
@@ -289,6 +299,9 @@
       "package": "pqbench_falcon_512",
       "verify_test": "bench_verify_falcon_512_direct",
       "baseline_test": "bench_baseline_falcon_512_direct",
+      "validate_test": "bench_validate_falcon_512_direct",
+      "validate_baseline_test": "bench_validate_base_falcon_512_direct",
+      "contract": "Falcon512DirectAccount",
       "nist_category": "1",
       "standardized": "draft (FIPS 206); hash-to-point XOF swapped to BLAKE2s (non-standard)",
       "on_chain_hash": "BLAKE2s hash-to-point (on-chain)",
@@ -308,6 +321,13 @@
       "pct_of_step_cap": 34.0697,
       "fits_gas_cap": true,
       "fits_step_cap": true,
+      "validate_l2_gas": 38710030,
+      "validate_steps": 354481,
+      "validate_pct_of_gas_cap": 38.71,
+      "validate_pct_of_step_cap": 35.4481,
+      "validate_fits": true,
+      "class_felts": 10631,
+      "class_bytes": 285649,
       "verify_profile": [
         {
           "function": "pqbench_falcon_512::falcon::verify_512_direct[1437-1778]",
@@ -340,7 +360,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[520-1822]",
+          "function": "pqbench_ntt::engine::merge_level[527-1829]",
           "flat_steps": 20460,
           "flat_pct": 5.99,
           "harness": false
@@ -352,7 +372,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[2011-2286]",
+          "function": "pqbench_ntt::engine::merge_level[2018-2293]",
           "flat_steps": 19328,
           "flat_pct": 5.66,
           "harness": false
@@ -418,7 +438,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[1869-2320]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
           "flat_steps": 6744,
           "flat_pct": 1.98,
           "harness": false
@@ -436,13 +456,13 @@
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[1869-2320]",
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]",
           "flat_steps": 3478,
           "flat_pct": 1.02,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::merge_level[378-1856]",
+          "function": "pqbench_ntt::engine::merge_level[385-1863]",
           "flat_steps": 3213,
           "flat_pct": 0.94,
           "harness": false
