@@ -24,7 +24,7 @@ jobs:
         with:
           scarb-version: ${{ steps.versions.outputs.scarb }}
 
-      - uses: foundry-rs/setup-snfoundry@v3
+      - uses: foundry-rs/setup-snfoundry@v5
         with:
           starknet-foundry-version: ${{ steps.versions.outputs.snforge }}
 

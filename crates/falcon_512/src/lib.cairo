@@ -1,11 +1,12 @@
-//! Falcon-512 (FN-DSA) signature verifier, hint-based variant with BLAKE2s hash-to-point.
+//! Falcon-512 (FN-DSA) signature verifiers, hint and direct variants, with BLAKE2s
+//! hash-to-point.
 //!
-//! Ported from s2morrow (MIT; see per-module headers and `PORTING.md` for provenance and
-//! deviations). Verification runs entirely on-chain: the message point is derived from
-//! `message_hash` and the signature salt via a BLAKE2s counter-mode XOF (NON-standard:
-//! FIPS 206 uses SHAKE-256 — see `hash_to_point.cairo`), the packed inputs are validated
-//! canonical on unpack, and the polynomial product `s1 * h` is bound to the signer-supplied
-//! hint through two forward NTTs and a pointwise check.
+//! Verification runs entirely on-chain: the message point is derived from `message_hash`
+//! and the signature salt via a BLAKE2s counter-mode XOF (NON-standard: FIPS 206 uses
+//! SHAKE-256 — see `hash_to_point.cairo`), the packed inputs are validated canonical on
+//! unpack, and the polynomial product `s1 * h` is either bound to the signer-supplied
+//! hint through two forward NTTs and a pointwise check, or computed directly as
+//! `INTT(NTT(s1) ∘ h_ntt)`.
 //!
 //! Fixture generation for tests/benchmarks: `scripts/gen_falcon_fixture.py`.
 

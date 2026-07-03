@@ -1,12 +1,3 @@
-// SPDX-License-Identifier: MIT
-//
-// Original to this crate (not ported from s2morrow, whose hash-to-point is Poseidon-based):
-// Falcon's spec hash-to-point (rejection sampling of 16-bit candidates, FIPS 206 / falcon.py
-// `Falcon.__hash_to_point__`) with the XOF instantiated as BLAKE2s in counter mode instead
-// of SHAKE-256, to use the Cairo-native `core::blake` builtin. NON-STANDARD: signatures are
-// not FIPS-206-interoperable; the off-chain signer must hash with the same construction
-// (see scripts/gen_falcon_fixture.py).
-
 //! BLAKE2s-based hash-to-point for Falcon-512.
 //!
 //! Maps `(message_hash, salt)` to 512 coefficients in `[0, Q)`:
@@ -22,6 +13,10 @@
 //! as the SHAKE-256 construction in the Falcon spec.
 //!
 //! The salt is 40 bytes (the FIPS-206 salt length), carried as two felts of 20 bytes each.
+//!
+//! The XOF is BLAKE2s in counter mode (the Cairo-native `core::blake` builtin), not the
+//! SHAKE-256 of FIPS 206: signatures are NOT FIPS-206-interoperable, and the off-chain
+//! signer must hash with this exact construction (see `scripts/gen_falcon_fixture.py`).
 
 use core::blake::{blake2s_compress, blake2s_finalize};
 

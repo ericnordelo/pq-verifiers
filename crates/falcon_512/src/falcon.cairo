@@ -1,11 +1,3 @@
-// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
-//
-// SPDX-License-Identifier: MIT
-//
-// Hint-based verification equation ported from s2morrow `packages/falcon/src/falcon.cairo`
-// (feltroidprime/s2morrow@4eff9ab9f5a4 `verify_with_msg_point`). `SIG_BOUND_512` matches
-// falcon.py `params[512].sig_bound` and the starkware-bitcoin fork's `sig_bound(512)`.
-
 //! Falcon-512 signature verification.
 //!
 //! Hint variant: verifies `s1 * h == mul_hint` via two forward NTTs and a pointwise

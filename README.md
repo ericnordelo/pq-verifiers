@@ -24,25 +24,31 @@ verifier has to fit under both.
 
 ![Benchmark summary](results/report.svg)
 
-| Scheme | Status | Verify (L2 gas) | Inside `__validate__` (L2 gas) | % of gas cap |
+Current efficiency of every measured entry, per crate (the values pinned in
+[`efficiency_baseline.json`](efficiency_baseline.json); caps are 100,000,000 L2 gas and
+1,000,000 steps):
+
+| Crate | Measurement | L2 gas | Steps | % of gas cap |
 |---|---|--:|--:|--:|
-| ECDSA-STARK | baseline (classical control) | 30,855 | 160,795 | 0.16% |
-| Falcon-512 (hint) | measured (bare verify) | 35,643,340 | — | 35.6% |
-| Falcon-512 direct (no hint) | measured (bare verify) | 37,190,480 | — | 37.2% |
-| ML-DSA-44 | pending | — | — | — |
-| Poseidon-WOTS+ | pending | — | — | — |
+| [`ecdsa_stark`](crates/ecdsa_stark) | verify (classical control) | 30,855 | 152 | 0.03% |
+| [`bench_targets`](crates/bench_targets) | ECDSA inside `__validate__` (account mock) | 160,795 | 1,437 | 0.16% |
+| [`falcon_512`](crates/falcon_512) | verify, hint variant | 35,643,340 | 322,958 | 35.6% |
+| [`falcon_512`](crates/falcon_512) | verify, direct variant | 37,190,480 | 340,697 | 37.2% |
+| [`ntt`](crates/ntt) | forward 512-point transform | 8,895,740 | 81,826 | 8.9% |
+| [`ntt`](crates/ntt) | forward + inverse roundtrip | 22,725,980 | 211,044 | 22.7% |
+| [`ml_dsa_44`](crates/ml_dsa_44) | verify | stub — not yet measured | — | — |
+| [`poseidon_wots`](crates/poseidon_wots) | verify | stub — not yet measured | — | — |
 
 ECDSA-STARK is the classical scheme in use today, a cost reference rather than a PQ
 candidate. Falcon-512 is the first PQ verifier measured, in two variants sharing the same
 NTT-domain public key and on-chain BLAKE2s hash-to-point (non-standard XOF swap from
 SHAKE-256), both validated by a genuine falcon.py-signed fixture and both fitting the
-validation caps at ~36% of L2 gas / ~34% of steps. Their transforms run on the shared
-lazy-reduction NTT engine (`crates/ntt`: felt252 butterflies, at most two reduction
-passes per transform). The direct variant carries half the signature calldata (31 vs 60 felts) and no
-signer-supplied hint at a ~4% cost premium (its INTT versus the hint's second forward
-transform). With a coefficient-domain key the direct method would need a third transform
-— measured in [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).
-The remaining PQ verifiers are scaffolded behind the same interface (see `crates/`).
+validation caps. Their transforms run on the shared lazy-reduction NTT engine
+([`crates/ntt`](crates/ntt): felt252 butterflies, at most two reduction passes per
+transform); storing the public key in the NTT domain is what keeps either variant at two
+transforms. The direct variant carries half the signature calldata (31 vs 60 felts) and
+no signer-supplied hint, at a ~4% cost premium (its inverse transform versus the hint's
+second forward one). The remaining PQ verifiers are scaffolded behind the same interface.
 
 ## Report
 
@@ -83,11 +89,14 @@ and improvements are committed via `make ratchet`.
 
 ## Method
 
-Each cost is isolated by subtracting a baseline test (same inputs, no verify call) from the
-measured one. Bare verify covers the function alone. The validate scenario deploys an account
-mock and calls it, which adds dispatch, signature deserialization, and a storage read.
-Numbers come from Starknet Foundry (gas, steps, builtins), a release build (class size), and
-cairo-profiler (attribution by function).
+Every scheme implements the one interface in
+[`crates/bench_interface`](crates/bench_interface), and each cost is isolated by
+subtracting a baseline test (same inputs, no verify call) from the measured one. Bare
+verify covers the function alone. The validate scenario deploys an account mock from
+[`crates/bench_targets`](crates/bench_targets) and calls it, which adds dispatch,
+signature deserialization, and a storage read. Numbers come from Starknet Foundry (gas,
+steps, builtins), a release build (class size), and cairo-profiler (attribution by
+function).
 
 ## Layout
 

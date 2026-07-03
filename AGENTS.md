@@ -51,6 +51,7 @@ A change is complete only when everything it invalidates is regenerated in the s
 | If you change... | Also update... |
 |---|---|
 | Any measured Cairo code | `make all` (regenerates `results/`), `make check-eff`, and `make ratchet` if numbers improved |
+| Any number in `efficiency_baseline.json` | the efficiency tables in the main README and in the owning crate's README |
 | A verifier's cost or status | the README snapshot table and its `Last updated:` date |
 | A scheme's encoding (felt layout, sizes) | `schemes.json` sizes, the crate README, `scripts/gen_falcon_fixture.py` (and regenerate the fixture) |
 | The public surface of a measured crate | its benchmark pairs and `efficiency_baseline.json` entries (see below) |
@@ -94,13 +95,13 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
   `efficiency_baseline.json` and `results/`; READMEs may quote the current snapshot.
   Comments may state structural facts ("at most two reduction passes per transform"),
   not gas figures.
-- **No per-file license headers on original code.** The repository `LICENSE` covers
-  everything; do not add `SPDX-FileCopyrightText` / `SPDX-License-Identifier` blocks to
-  files authored here. The one exception is ported third-party code, which keeps the
-  upstream copyright header it arrived with — that is a license obligation, not a
-  style choice.
-- **Attribution is not comparison.** Ported files keep their upstream copyright and
-  ported-from headers. State provenance; describe behavior in present terms.
+- **No per-file license or provenance headers, ever.** Source files carry no
+  `SPDX-FileCopyrightText` / `SPDX-License-Identifier` blocks and no "ported from"
+  header comments — not for original code and not for ported code. The repository
+  `LICENSE` covers the project and carries the third-party notices that license
+  compliance requires; per-file provenance (upstream repos, commits, decisions) lives
+  in `PORTING.md`. A file starts directly with its `//!` module doc, which describes
+  what the module does in present terms.
 - Design rationale is welcome when it explains the current design on its own terms
   (e.g. why lazy reduction is sound, why an offset is a multiple of q) — the test is
   whether the comment still reads true to someone who has never seen any other version.
@@ -137,24 +138,29 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
    fixture) and the `efficiency_baseline.json` entries (seed with `make ratchet`).
 6. `make all`, then commit the regenerated `results/`.
 
-## Per-crate README format
+## README requirements
 
-Keep it to a few lines. Verifier crates:
+**Every crate README** has two mandatory parts:
 
-```
-# <Scheme name> verifier
+1. A short description of what the crate is and does (a few sentences, external-reader
+   voice), plus links to deeper detail (spec / NIST FIPS / reference implementation /
+   the crate's executable correctness argument).
+2. A **current-efficiency table** with one row per ratchet entry the crate owns, showing
+   both **L2 gas and Cairo steps** (the values in `efficiency_baseline.json`). Stub
+   crates state that no measurements exist yet instead of a table.
 
-**Scheme:** <name> — <family>, <standardization status>.
-**Status:** <measured | stub (pending implementation)>.
+Verifier crates open with `**Scheme:** <name> — <family>, <standardization status>.`;
+component crates with `**Component:** <what it provides>.`; both carry a
+`**Status:** <measured | stub (pending implementation)>.` line.
 
-<One or two sentences: what it is and why it is a candidate (or, for the baseline, why
-it is only a control).>
+**The main README** must:
 
-Implements `PqSignatureVerifier`. <Link(s) to deeper detail: spec / NIST FIPS / reference impl.>
-```
-
-Component crates use the same shape with **Component:** instead of **Scheme:**, and
-point to their executable correctness argument.
+- show the current efficiency (L2 gas and steps) of **every measured entry across all
+  crates** — verifier and component/helper crates (e.g. the NTT engine) alike — sourced
+  from `efficiency_baseline.json`;
+- **link to every crate** it mentions (tables and prose alike);
+- never reference pull requests, issues, or repository history — it describes the
+  current state only (history lives in commit messages and `PORTING.md`).
 
 ## Repo basics
 

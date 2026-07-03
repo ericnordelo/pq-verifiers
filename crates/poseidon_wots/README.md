@@ -10,3 +10,7 @@ SHA/SHAKE-based analog is SLH-DSA (SPHINCS+).
 
 Implements `PqSignatureVerifier`. Reference:
 [NIST FIPS 205 (SLH-DSA)](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.205.pdf).
+
+## Current efficiency
+
+No measurements yet: the crate is a stub, so it has no ratchet entries.

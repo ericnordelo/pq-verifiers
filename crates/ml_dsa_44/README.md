@@ -10,3 +10,7 @@ Cairo the hashing is expected to dominate the cost.
 
 Implements `PqSignatureVerifier`. Reference:
 [NIST FIPS 204](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.204.pdf).
+
+## Current efficiency
+
+No measurements yet: the crate is a stub, so it has no ratchet entries.

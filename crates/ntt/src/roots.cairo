@@ -1,15 +1,8 @@
-// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
-//
-// SPDX-License-Identifier: MIT
-//
-// Ported from s2morrow `packages/falcon/src/ntt_constants.cairo`
-// (starkware-bitcoin/s2morrow@831bb518b06d), tables verbatim, with one omission: the
-// `phi2048` tables (degree-1024 dispatch) serve only Falcon-1024 and are dropped here.
-// Formerly `crates/falcon_512/src/ntt_constants.cairo`; moved into the shared NTT crate
-// unchanged. Table integrity is checked independently by
-// `scripts/verify_ntt_constants.py` (root-chain, inverse pairing, falcon.py cross-check).
-
 //! Constants (Zq-roots of cyclotomic polynomials and their inverses) for the NTT.
+//!
+//! Table integrity is verified from first principles by `scripts/verify_ntt_constants.py`
+//! (root-chain consistency, inverse pairing, and a falcon.py cross-check that pins the
+//! interop convention).
 
 /// Even roots of phi_4 = x^2 + 1.
 const phi4_roots_zq: [u16; 1] = [1479];

@@ -1,17 +1,7 @@
-// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
-//
-// SPDX-License-Identifier: MIT
-//
-// Ported from s2morrow `packages/falcon/src/zq.cairo` (starkware-bitcoin/s2morrow@831bb518b06d);
-// `center_sq` follows feltroidprime/s2morrow@4eff9ab9f5a4 falcon.cairo's `center_and_square`.
-//
-// Note: the optimized s2morrow fork implements this module on `BoundedInt` typed ranges. At
-// cairo 2.18 the `BoundedInt` type is crate-private in corelib and const construction of
-// values crashes the const evaluator (unstable `bounded-int-utils` feature), so this port
-// keeps the upstream plain-integer arithmetic: coefficients are `u16` in `[0, Q)` by
-// construction (every function returns a `% Q` result), with u32/u64 intermediates.
-
 //! Operations on the base ring Z_q (q = 12289).
+//!
+//! Coefficients are `u16` values in `[0, Q)` by construction — every function returns a
+//! `% Q` result — with u32/u64 intermediates sized so the arithmetic cannot overflow.
 
 /// The Falcon modulus q = 12289 = 12·1024 + 1.
 pub const Q: u16 = 12289;

@@ -1,13 +1,3 @@
-// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
-//
-// SPDX-License-Identifier: MIT
-//
-// Packing layout from s2morrow `packages/falcon/src/packing.cairo`
-// (feltroidprime/s2morrow@4eff9ab9f5a4): felt = pack9(c[0..9]) + 2^128 * pack9(c[9..18]).
-// Reimplemented with plain u128 arithmetic (upstream builds on `BoundedInt`, crate-private
-// at cairo 2.18) and with the canonical-encoding validation upstream lacks (see PORTING.md:
-// "PK coefficients < Q on read").
-
 //! Base-Q packing of 512 Z_q coefficients into 29 felt252 slots.
 //!
 //! Each full slot carries two u128 halves; each half Horner-packs 9 coefficients in base

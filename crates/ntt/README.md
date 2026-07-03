@@ -2,8 +2,7 @@
 
 **Component:** Number-Theoretic Transform (fast negacyclic polynomial multiplication),
 shared by the lattice verifiers.
-**Status:** measured (see `efficiency_baseline.json`: forward 512 ≈ 8.9M L2 gas,
-roundtrip ≈ 22.7M).
+**Status:** measured.
 
 A modular, scheme-agnostic NTT optimized for the Cairo cost model: butterfly arithmetic
 runs natively in felt252 (one field multiplication and a few additions each, no per
@@ -18,3 +17,10 @@ threshold) is documented in `src/engine.cairo` and kept executable by
 on random and adversarial inputs and generates the derived tables. Root tables are
 ported verbatim from s2morrow (MIT) and independently re-verified by
 `scripts/verify_ntt_constants.py`.
+
+## Current efficiency
+
+| Measurement | L2 gas | Steps |
+|---|--:|--:|
+| forward 512-point transform | 8,895,740 | 81,826 |
+| forward + inverse roundtrip | 22,725,980 | 211,044 |
