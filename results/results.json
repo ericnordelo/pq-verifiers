@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-07-03 11:30",
+    "generated": "2026-07-03 13:40",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -49,8 +49,8 @@
       "verify_l2_gas": 30855,
       "verify_steps": 152,
       "verify_builtins": {
-        "range_check": 7,
-        "ec_op": 3
+        "ec_op": 3,
+        "range_check": 7
       },
       "calldata_l2_gas": 15360,
       "pct_of_gas_cap": 0.0309,
@@ -119,14 +119,14 @@
       "implemented": true,
       "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Hint-based verify (2 forward NTTs); BLAKE2s XOF keeps hash-to-point on-chain (message-binding) at corelib cost. Fragile signing; Cat-1.",
       "measured": true,
-      "verify_l2_gas": 76248400,
-      "verify_steps": 668947,
+      "verify_l2_gas": 76251800,
+      "verify_steps": 668981,
       "verify_builtins": {
         "range_check": 118210
       },
       "calldata_l2_gas": 455680,
-      "pct_of_gas_cap": 76.2484,
-      "pct_of_step_cap": 66.8947,
+      "pct_of_gas_cap": 76.2518,
+      "pct_of_step_cap": 66.8981,
       "fits_gas_cap": true,
       "fits_step_cap": true,
       "verify_profile": [
@@ -209,20 +209,26 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::Falcon512Verifier::verify",
-          "flat_steps": 107,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
           "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512",
-          "flat_steps": 85,
-          "flat_pct": 0.01,
+          "flat_steps": 114,
+          "flat_pct": 0.02,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
           "flat_steps": 65,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::parse_common",
+          "flat_steps": 59,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::parse_hint",
+          "flat_steps": 53,
           "flat_pct": 0.01,
           "harness": false
         },
@@ -262,14 +268,14 @@
       "implemented": true,
       "notes": "Textbook verification equation: s1*h computed on-chain as INTT(NTT(s1) . h_ntt) \u2014 2 transforms because the pk is stored NTT-domain (a coefficient-domain pk needs 3 and busts the gas cap, cf. ericnordelo/pq-verifiers#1). Half the signature calldata of the hint variant; no signer-supplied hint in the trust surface.",
       "measured": true,
-      "verify_l2_gas": 76153420,
-      "verify_steps": 667762,
+      "verify_l2_gas": 76153920,
+      "verify_steps": 667767,
       "verify_builtins": {
         "range_check": 119006
       },
       "calldata_l2_gas": 307200,
-      "pct_of_gas_cap": 76.1534,
-      "pct_of_step_cap": 66.7762,
+      "pct_of_gas_cap": 76.1539,
+      "pct_of_step_cap": 66.7767,
       "fits_gas_cap": true,
       "fits_step_cap": true,
       "verify_profile": [
@@ -358,7 +364,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512_integrationtest::bench::signature_direct[219-294]",
+          "function": "pqbench_falcon_512_integrationtest::bench::sig_prefix_31[221-296]",
           "flat_steps": 479,
           "flat_pct": 0.07,
           "harness": false
@@ -382,26 +388,26 @@
           "harness": false
         },
         {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_direct",
+          "flat_steps": 130,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
           "function": "pqbench_falcon_512::bench_fixture::signature",
           "flat_steps": 124,
           "flat_pct": 0.02,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_direct",
-          "flat_steps": 101,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::Falcon512DirectVerifier::verify",
-          "flat_steps": 83,
+          "function": "pqbench_falcon_512::falcon::verify_512_direct",
+          "flat_steps": 65,
           "flat_pct": 0.01,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::falcon::verify_512_direct",
-          "flat_steps": 65,
+          "function": "pqbench_falcon_512::parse_common",
+          "flat_steps": 59,
           "flat_pct": 0.01,
           "harness": false
         },
@@ -420,6 +426,348 @@
         {
           "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
           "flat_steps": 1,
+          "flat_pct": 0.0,
+          "harness": true
+        }
+      ]
+    },
+    {
+      "key": "falcon_512_poseidon",
+      "label": "Falcon-512 Poseidon (hint)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_poseidon",
+      "baseline_test": "bench_baseline_falcon_512_poseidon",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); hash-to-point swapped to a Poseidon sponge (non-standard)",
+      "on_chain_hash": "Poseidon hash-to-point (on-chain)",
+      "offchain_prep": "signer supplies mul hint (s1*h mod q; +29 sig felts)",
+      "sig_felts": 60,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "s2morrow's deployed hash-to-point: Poseidon sponge squeeze, 12 base-Q digits per felt. Mod-Q extraction is biased (not the spec's rejection sampling); upstream cites a Renyi analysis (<=0.37 bits loss) whose document is a dangling reference. Salts range-checked here (deviation from s2morrow). Same hint-based verify and norm bound as falcon_512.",
+      "measured": true,
+      "verify_l2_gas": 75810314,
+      "verify_steps": 665745,
+      "verify_builtins": {
+        "range_check": 117739,
+        "poseidon": 24
+      },
+      "calldata_l2_gas": 455680,
+      "pct_of_gas_cap": 75.8103,
+      "pct_of_step_cap": 66.5745,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
+          "flat_steps": 353244,
+          "flat_pct": 53.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::split[159-302]",
+          "flat_steps": 102368,
+          "flat_pct": 15.37,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::ntt",
+          "flat_steps": 77678,
+          "flat_pct": 11.66,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint[999-1450]",
+          "flat_steps": 50140,
+          "flat_pct": 7.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
+          "flat_steps": 47584,
+          "flat_pct": 7.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::append_digits[411-565]",
+          "flat_steps": 16394,
+          "flat_pct": 2.46,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
+          "flat_steps": 7119,
+          "flat_pct": 1.07,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
+          "flat_steps": 7108,
+          "flat_pct": 1.07,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::extract_12",
+          "flat_steps": 2352,
+          "flat_pct": 0.35,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::hash_to_point_poseidon_512[590-887]",
+          "flat_steps": 1016,
+          "flat_pct": 0.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
+          "flat_steps": 243,
+          "flat_pct": 0.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::bench_fixture_poseidon::signature",
+          "flat_steps": 124,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_poseidon",
+          "flat_steps": 116,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::hash_to_point_poseidon_512",
+          "flat_steps": 106,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
+          "flat_steps": 65,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::parse_common",
+          "flat_steps": 59,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::extract_8",
+          "flat_steps": 56,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::parse_hint",
+          "flat_steps": 53,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "core::poseidon::_poseidon_hash_span_inner",
+          "flat_steps": 50,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 31,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_poseidon__snforge_internal_test_generated",
+          "flat_steps": 26,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
+          "flat_steps": 1,
+          "flat_pct": 0.0,
+          "harness": true
+        }
+      ]
+    },
+    {
+      "key": "falcon_512_poseidon_direct",
+      "label": "Falcon-512 Poseidon direct",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_poseidon_direct",
+      "baseline_test": "bench_baseline_falcon_512_poseidon_direct",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); hash-to-point swapped to a Poseidon sponge (non-standard)",
+      "on_chain_hash": "Poseidon hash-to-point (on-chain)",
+      "offchain_prep": "none beyond signing (no hint)",
+      "sig_felts": 31,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "Direct equation INTT(NTT(s1) . h_ntt) with s2morrow's Poseidon hash-to-point (biased mod-Q squeeze; Renyi claim attributed to upstream, reference unpublished). Shares falcon_512_direct's verify path and falcon_512_poseidon's hashing; 31-felt signature, no hint.",
+      "measured": true,
+      "verify_l2_gas": 75712434,
+      "verify_steps": 664530,
+      "verify_builtins": {
+        "range_check": 118535,
+        "poseidon": 24
+      },
+      "calldata_l2_gas": 307200,
+      "pct_of_gas_cap": 75.7124,
+      "pct_of_step_cap": 66.453,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::ntt::split_ntt[247-592]",
+          "flat_steps": 193006,
+          "flat_pct": 29.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
+          "flat_steps": 176622,
+          "flat_pct": 26.55,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::split[159-302]",
+          "flat_steps": 51184,
+          "flat_pct": 7.69,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::merge[147-284]",
+          "flat_steps": 47088,
+          "flat_pct": 7.08,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::intt",
+          "flat_steps": 43202,
+          "flat_pct": 6.49,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::ntt",
+          "flat_steps": 38839,
+          "flat_pct": 5.84,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct[956-1170]",
+          "flat_steps": 32725,
+          "flat_pct": 4.92,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
+          "flat_steps": 31713,
+          "flat_pct": 4.77,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::mul_ntt[203-351]",
+          "flat_steps": 17936,
+          "flat_pct": 2.7,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::append_digits[411-565]",
+          "flat_steps": 16394,
+          "flat_pct": 2.46,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
+          "flat_steps": 4746,
+          "flat_pct": 0.71,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
+          "flat_steps": 3554,
+          "flat_pct": 0.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots_inv",
+          "flat_steps": 3554,
+          "flat_pct": 0.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::extract_12",
+          "flat_steps": 2352,
+          "flat_pct": 0.35,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::hash_to_point_poseidon_512[590-887]",
+          "flat_steps": 1016,
+          "flat_pct": 0.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::sig_prefix_31[221-296]",
+          "flat_steps": 479,
+          "flat_pct": 0.07,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
+          "flat_steps": 162,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_poseidon_direct",
+          "flat_steps": 132,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::bench_fixture_poseidon::signature",
+          "flat_steps": 124,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::hash_to_point_poseidon_512",
+          "flat_steps": 106,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct",
+          "flat_steps": 65,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::parse_common",
+          "flat_steps": 59,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point_poseidon::extract_8",
+          "flat_steps": 56,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "core::poseidon::_poseidon_hash_span_inner",
+          "flat_steps": 50,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 31,
           "flat_pct": 0.0,
           "harness": true
         }

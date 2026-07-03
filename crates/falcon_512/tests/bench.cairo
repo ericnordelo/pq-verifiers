@@ -4,23 +4,35 @@
 //! `bench_baseline_*`, which build IDENTICAL inputs; only the former calls `verify`. The
 //! per-scheme verification cost is `verify_total - baseline_total` for each metric.
 //!
-//! The fixture is a genuine signature (reference falcon.py sampler + the BLAKE2s
-//! hash-to-point; regenerate with `scripts/gen_falcon_fixture.py`). The non-bench tests
-//! below are the correctness gate: the fixture verifies, and any tampering — signature,
-//! hint, salt, message, or public key — is rejected.
+//! Each hash-to-point construction (BLAKE2s and Poseidon) has its own genuine fixture
+//! (reference falcon.py sampler; regenerate with `scripts/gen_falcon_fixture.py
+//! [--hash poseidon]`), and both verify variants share it (the direct signature is the
+//! 31-felt prefix of the hint one). The non-bench tests below are the correctness gate:
+//! the fixtures verify, and any tampering — signature, hint, salt, message, or public
+//! key — is rejected.
 
 use pqbench_falcon_512::bench_fixture::{msg, public_key, signature};
-use pqbench_falcon_512::{Falcon512DirectVerifier, Falcon512Verifier};
+use pqbench_falcon_512::bench_fixture_poseidon::{
+    msg as msg_p, public_key as public_key_p, signature as signature_p,
+};
+use pqbench_falcon_512::{
+    Falcon512DirectVerifier, Falcon512PoseidonDirectVerifier, Falcon512PoseidonVerifier,
+    Falcon512Verifier,
+};
 use pqbench_interface::PqSignatureVerifier;
 
-/// Direct-variant signature: the s1 || salt prefix of the fixture signature.
-fn signature_direct() -> Array<felt252> {
+/// Direct-variant signature: the s1 || salt prefix of a hint-layout signature.
+fn sig_prefix_31(sig: Span<felt252>) -> Array<felt252> {
     let mut out: Array<felt252> = array![];
-    let mut prefix = signature().span().slice(0, 31);
+    let mut prefix = sig.slice(0, 31);
     while let Some(f) = prefix.pop_front() {
         out.append(*f);
     }
     out
+}
+
+fn signature_direct() -> Array<felt252> {
+    sig_prefix_31(signature().span())
 }
 
 /// Builds the inputs but does NOT verify — the subtraction baseline.
@@ -72,6 +84,77 @@ fn test_falcon_512_direct_rejects_tampering() {
     assert!(!Falcon512DirectVerifier::verify(msg(), pk.span(), bad_s1.span()));
     // The 60-felt hint layout is not valid for the direct scheme.
     assert!(!Falcon512DirectVerifier::verify(msg(), pk.span(), signature().span()));
+}
+
+/// Builds the Poseidon hint-variant inputs but does NOT verify — the subtraction baseline.
+#[test]
+fn bench_baseline_falcon_512_poseidon() {
+    let pk = public_key_p();
+    let sig = signature_p();
+    assert!(pk.len() == 29 && sig.len() == 60);
+}
+
+/// Builds the Poseidon hint-variant inputs and verifies — the measured scenario.
+#[test]
+fn bench_verify_falcon_512_poseidon() {
+    let pk = public_key_p();
+    let sig = signature_p();
+    let valid = Falcon512PoseidonVerifier::verify(msg_p(), pk.span(), sig.span());
+    assert!(valid);
+}
+
+/// Builds the Poseidon direct-variant inputs but does NOT verify — the subtraction baseline.
+#[test]
+fn bench_baseline_falcon_512_poseidon_direct() {
+    let pk = public_key_p();
+    let sig = sig_prefix_31(signature_p().span());
+    assert!(pk.len() == 29 && sig.len() == 31);
+}
+
+/// Builds the Poseidon direct-variant inputs and verifies — the measured scenario.
+#[test]
+fn bench_verify_falcon_512_poseidon_direct() {
+    let pk = public_key_p();
+    let sig = sig_prefix_31(signature_p().span());
+    let valid = Falcon512PoseidonDirectVerifier::verify(msg_p(), pk.span(), sig.span());
+    assert!(valid);
+}
+
+#[test]
+fn test_falcon_512_poseidon_rejects_tampering() {
+    let pk = public_key_p();
+    let sig = signature_p();
+    assert!(!Falcon512PoseidonVerifier::verify('OTHER_MSG', pk.span(), sig.span()));
+    // Tampered salt changes the msg_point: norm check fails.
+    let bad_salt = with_felt_replaced(sig.span(), 29, *sig.span().at(29) + 1);
+    assert!(!Falcon512PoseidonVerifier::verify(msg_p(), pk.span(), bad_salt.span()));
+    // Swapped (still canonical) s1 felts no longer match the hint / equation.
+    let a = *sig.span().at(0);
+    let b = *sig.span().at(1);
+    let bad_s1 = with_felt_replaced(with_felt_replaced(sig.span(), 0, b).span(), 1, a);
+    assert!(!Falcon512PoseidonVerifier::verify(msg_p(), pk.span(), bad_s1.span()));
+    // Swapped hint felts fail the pointwise product check.
+    let h1 = *sig.span().at(31);
+    let h2 = *sig.span().at(32);
+    let bad_hint = with_felt_replaced(with_felt_replaced(sig.span(), 31, h2).span(), 32, h1);
+    assert!(!Falcon512PoseidonVerifier::verify(msg_p(), pk.span(), bad_hint.span()));
+    // Wrong lengths are rejected.
+    assert!(!Falcon512PoseidonVerifier::verify(msg_p(), pk.span(), sig.span().slice(0, 59)));
+}
+
+#[test]
+fn test_falcon_512_poseidon_direct_rejects_tampering() {
+    let pk = public_key_p();
+    let sig = sig_prefix_31(signature_p().span());
+    assert!(!Falcon512PoseidonDirectVerifier::verify('OTHER_MSG', pk.span(), sig.span()));
+    let bad_salt = with_felt_replaced(sig.span(), 29, *sig.span().at(29) + 1);
+    assert!(!Falcon512PoseidonDirectVerifier::verify(msg_p(), pk.span(), bad_salt.span()));
+    let a = *sig.span().at(0);
+    let b = *sig.span().at(1);
+    let bad_s1 = with_felt_replaced(with_felt_replaced(sig.span(), 0, b).span(), 1, a);
+    assert!(!Falcon512PoseidonDirectVerifier::verify(msg_p(), pk.span(), bad_s1.span()));
+    // The 60-felt hint layout is not valid for the direct scheme.
+    assert!(!Falcon512PoseidonDirectVerifier::verify(msg_p(), pk.span(), signature_p().span()));
 }
 
 /// Copy of `src` with `src[index]` replaced by `value`.

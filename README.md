@@ -27,20 +27,25 @@ verifier has to fit under both.
 | Scheme | Status | Verify (L2 gas) | Inside `__validate__` (L2 gas) | % of gas cap |
 |---|---|--:|--:|--:|
 | ECDSA-STARK | baseline (classical control) | 30,855 | 160,795 | 0.16% |
-| Falcon-512 (hint) | measured (bare verify) | 76,248,400 | — | 76.2% |
-| Falcon-512 direct (no hint) | measured (bare verify) | 76,153,420 | — | 76.2% |
+| Falcon-512 (hint, BLAKE2s) | measured (bare verify) | 76,251,800 | — | 76.3% |
+| Falcon-512 direct (BLAKE2s) | measured (bare verify) | 76,153,920 | — | 76.2% |
+| Falcon-512 Poseidon (hint) | measured (bare verify) | 75,810,314 | — | 75.8% |
+| Falcon-512 Poseidon direct | measured (bare verify) | 75,712,434 | — | 75.7% |
 | ML-DSA-44 | pending | — | — | — |
 | Poseidon-WOTS+ | pending | — | — | — |
 
 ECDSA-STARK is the classical scheme in use today, a cost reference rather than a PQ
-candidate. Falcon-512 is the first PQ verifier measured, in two variants sharing the same
-NTT-domain public key and on-chain BLAKE2s hash-to-point (non-standard XOF swap from
-SHAKE-256), both validated by a genuine falcon.py-signed fixture and both fitting the
-validation caps at ~76% of L2 gas / ~67% of steps. The variants cost the same because the
-NTT-domain key makes each need exactly two 512-point transforms; the direct one carries
-half the signature calldata (31 vs 60 felts) and no signer-supplied hint, so it dominates
-here. (With a coefficient-domain key the direct method needs a third transform and busts
-the budget — measured in [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).)
+candidate. Falcon-512 is the first PQ verifier measured, in four schemes sharing one
+NTT-domain public key: two verify variants (hint vs direct) crossed with two on-chain
+hash-to-point constructions (BLAKE2s counter-mode XOF vs s2morrow's deployed Poseidon
+sponge — both non-standard swaps of the spec's SHAKE-256). Each construction is validated
+by its own genuine falcon.py-signed fixture, and all four fit the validation caps at
+~76% of L2 gas / ~66% of steps. The two 512-point NTT transforms dominate; the hash choice
+moves the bill by only ~0.4M gas (Poseidon cheaper), and the direct variant carries half
+the signature calldata (31 vs 60 felts) with no signer-supplied hint — making
+**Falcon-512 Poseidon direct** the cheapest configuration. (With a coefficient-domain key
+the direct method needs a third transform and busts the budget — measured in
+[ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).)
 The remaining PQ verifiers are scaffolded behind the same interface (see `crates/`).
 
 ## Report
@@ -70,7 +75,7 @@ make test       # run the test suite
 | Crate | Scheme | Family | Standardization |
 |---|---|---|---|
 | [`ecdsa_stark`](crates/ecdsa_stark) | ECDSA-STARK | classical EC (control) | none |
-| [`falcon_512`](crates/falcon_512) | Falcon-512 (FN-DSA), hint + direct variants | lattice (NTRU) | draft, FIPS 206 (BLAKE2s hash-to-point swap) |
+| [`falcon_512`](crates/falcon_512) | Falcon-512 (FN-DSA), {hint, direct} x {BLAKE2s, Poseidon} | lattice (NTRU) | draft, FIPS 206 (hash-to-point swapped) |
 | [`ml_dsa_44`](crates/ml_dsa_44) | ML-DSA-44 (Dilithium) | lattice (module) | final, FIPS 204 |
 | [`poseidon_wots`](crates/poseidon_wots) | Poseidon-WOTS+ | hashing | not standardized |
 

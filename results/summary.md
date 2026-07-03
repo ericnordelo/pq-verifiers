@@ -1,12 +1,14 @@
 # PQ verifier benchmark summary
 
-_Generated 2026-07-03 11:30._
+_Generated 2026-07-03 13:40._
 
 | Scheme | L2 gas | % gas cap | Steps | % step cap | Sig+PK felts | Fits caps |
 |---|--:|--:|--:|--:|--:|:--:|
 | ECDSA-STARK (baseline) | 30,855 | 0.0309% | 152 | 0.0152% | 3 | yes |
-| Falcon-512 (FN-DSA) | 76,248,400 | 76.2484% | 668,947 | 66.8947% | 89 | yes |
-| Falcon-512 direct (no hint) | 76,153,420 | 76.1534% | 667,762 | 66.7762% | 60 | yes |
+| Falcon-512 (FN-DSA) | 76,251,800 | 76.2518% | 668,981 | 66.8981% | 89 | yes |
+| Falcon-512 direct (no hint) | 76,153,920 | 76.1539% | 667,767 | 66.7767% | 60 | yes |
+| Falcon-512 Poseidon (hint) | 75,810,314 | 75.8103% | 665,745 | 66.5745% | 89 | yes |
+| Falcon-512 Poseidon direct | 75,712,434 | 75.7124% | 664,530 | 66.453% | 60 | yes |
 
 ## Pending implementation
 

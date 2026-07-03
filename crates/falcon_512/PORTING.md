@@ -19,10 +19,20 @@ deviate from or refine the plan below:
     keeps hash-to-point off-chain by carrying `msg_point` in the signature — rejected here
     because an on-chain verifier that never derives `msg_point` from `message_hash` is not
     message-binding: any `(s1, msg_point = s1*h + small)` pair would pass for any message).
-- **hash_to_point**: computed **on-chain** (message-binding), with the spec's rejection
-  sampling but the XOF instantiated as BLAKE2s in counter mode (`core::blake` builtin)
-  instead of SHAKE-256 — NON-standard, chosen for Cairo cost; construction documented in
-  `src/hash_to_point.cairo` and mirrored by `scripts/gen_falcon_fixture.py`.
+- **hash_to_point**: computed **on-chain** (message-binding), in two registered
+  constructions (both NON-standard — FIPS 206 uses SHAKE-256), each mirrored by
+  `scripts/gen_falcon_fixture.py`:
+  - *BLAKE2s* (`src/hash_to_point.cairo`, schemes `falcon_512`/`falcon_512_direct`): the
+    spec's rejection sampling with the XOF instantiated as BLAKE2s in counter mode
+    (`core::blake` builtin).
+  - *Poseidon* (`src/hash_to_point_poseidon.cairo`, schemes `falcon_512_poseidon`/
+    `falcon_512_poseidon_direct`): s2morrow's deployed sponge squeeze
+    (feltroidprime/s2morrow@4eff9ab9f5a4), BoundedInt chains reimplemented as plain u128
+    div-rem, salt range validation added (deviation). Port pinned by upstream's
+    Rust↔Cairo cross-language KAT, committed at `scripts/data/falcon_poseidon_h2p_kat.json`
+    (also the Python mirror's self-check gate; needs `poseidon-py` in the fixture venv).
+    Caveat: the mod-Q squeeze is biased, not rejection-sampled; upstream attributes a
+    Rényi analysis (≤0.37 bits loss) to a `scripts/renyi.md` not published with the code.
 - **Canonical-range validation**: unpacking rejects non-canonical base-Q encodings
   (the "PK coefficients < Q on read" gap flagged below), and oversized salts.
 - **Encoding**: pk = 29 felts (packed NTT-domain h); signature = 60 felts

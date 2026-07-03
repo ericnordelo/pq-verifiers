@@ -52,6 +52,38 @@
       "notes": "Textbook verification equation: s1*h computed on-chain as INTT(NTT(s1) . h_ntt) — 2 transforms because the pk is stored NTT-domain (a coefficient-domain pk needs 3 and busts the gas cap, cf. ericnordelo/pq-verifiers#1). Half the signature calldata of the hint variant; no signer-supplied hint in the trust surface."
     },
     {
+      "key": "falcon_512_poseidon",
+      "label": "Falcon-512 Poseidon (hint)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_poseidon",
+      "baseline_test": "bench_baseline_falcon_512_poseidon",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); hash-to-point swapped to a Poseidon sponge (non-standard)",
+      "on_chain_hash": "Poseidon hash-to-point (on-chain)",
+      "offchain_prep": "signer supplies mul hint (s1*h mod q; +29 sig felts)",
+      "sig_felts": 60,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "s2morrow's deployed hash-to-point: Poseidon sponge squeeze, 12 base-Q digits per felt. Mod-Q extraction is biased (not the spec's rejection sampling); upstream cites a Renyi analysis (<=0.37 bits loss) whose document is a dangling reference. Salts range-checked here (deviation from s2morrow). Same hint-based verify and norm bound as falcon_512."
+    },
+    {
+      "key": "falcon_512_poseidon_direct",
+      "label": "Falcon-512 Poseidon direct",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_poseidon_direct",
+      "baseline_test": "bench_baseline_falcon_512_poseidon_direct",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); hash-to-point swapped to a Poseidon sponge (non-standard)",
+      "on_chain_hash": "Poseidon hash-to-point (on-chain)",
+      "offchain_prep": "none beyond signing (no hint)",
+      "sig_felts": 31,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "Direct equation INTT(NTT(s1) . h_ntt) with s2morrow's Poseidon hash-to-point (biased mod-Q squeeze; Renyi claim attributed to upstream, reference unpublished). Shares falcon_512_direct's verify path and falcon_512_poseidon's hashing; 31-felt signature, no hint."
+    },
+    {
       "key": "ml_dsa_44",
       "label": "ML-DSA-44 (Dilithium)",
       "family": "lattice (module)",
