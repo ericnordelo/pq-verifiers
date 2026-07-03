@@ -1,7 +1,35 @@
 # Falcon-512 verifier — port plan
 
-Status: **stub**. This file is the concrete plan to replace the stub in `src/lib.cairo`
-with a real Falcon-512 verifier, derived from reading the reference implementation.
+Status: **implemented and measured** (all six steps done). Decisions taken, where they
+deviate from or refine the plan below:
+
+- **NTT**: the looped split/merge NTT (starkware-bitcoin fork), not the 11.6k-line unrolled
+  one; root tables independently verified by `scripts/verify_ntt_constants.py`, including a
+  cross-check against tprest/falcon.py that pins the interop convention. ~33M l2_gas per
+  512-point transform.
+- **Variants**: both are registered in `schemes.json` and measured.
+  - *Hint-based* (`falcon_512`): 2 forward NTTs; signature carries `mul_hint = s1*h`
+    (+29 felts).
+  - *Direct* (`falcon_512_direct`): no hint; `s1*h = INTT(NTT(s1) ∘ h_ntt)` — also only
+    2 transforms **because the public key is stored NTT-domain**. With a
+    coefficient-domain pk the direct method needs a third transform (`NTT(h)`) and busts
+    the validation budget: ~125.8M gas / 1.09M steps measured in
+    [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1)
+    (which also reports the unrolled NTT tripping the Sierra compiler under snforge, and
+    keeps hash-to-point off-chain by carrying `msg_point` in the signature — rejected here
+    because an on-chain verifier that never derives `msg_point` from `message_hash` is not
+    message-binding: any `(s1, msg_point = s1*h + small)` pair would pass for any message).
+- **hash_to_point**: computed **on-chain** (message-binding), with the spec's rejection
+  sampling but the XOF instantiated as BLAKE2s in counter mode (`core::blake` builtin)
+  instead of SHAKE-256 — NON-standard, chosen for Cairo cost; construction documented in
+  `src/hash_to_point.cairo` and mirrored by `scripts/gen_falcon_fixture.py`.
+- **Canonical-range validation**: unpacking rejects non-canonical base-Q encodings
+  (the "PK coefficients < Q on read" gap flagged below), and oversized salts.
+- **Encoding**: pk = 29 felts (packed NTT-domain h); signature = 60 felts
+  (packed s1 ‖ 40-byte salt as 2 felts ‖ packed mul_hint).
+- **Fixture**: genuine falcon.py keypair + ffSampling signature over the bench message
+  (`scripts/gen_falcon_fixture.py`), accepted by the verifier; tampered s1/hint/salt/pk/
+  message all rejected (`tests/bench.cairo`). Measured bare verify: ~76M l2_gas.
 
 ## Reference
 

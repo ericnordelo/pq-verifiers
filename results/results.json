@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-06-24 13:48",
+    "generated": "2026-07-03 11:30",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -111,14 +111,319 @@
       "verify_test": "bench_verify_falcon_512",
       "baseline_test": "bench_baseline_falcon_512",
       "nist_category": "1",
-      "standardized": "draft (FIPS 206)",
-      "on_chain_hash": "SHAKE-256 hash-to-point (off-chain)",
-      "offchain_prep": "hash-to-point computed off-chain",
-      "sig_felts": 22,
+      "standardized": "draft (FIPS 206); hash-to-point XOF swapped to BLAKE2s (non-standard)",
+      "on_chain_hash": "BLAKE2s hash-to-point (on-chain)",
+      "offchain_prep": "signer supplies mul hint (s1*h mod q; +29 sig felts)",
+      "sig_felts": 60,
       "pubkey_felts": 29,
-      "implemented": false,
-      "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1.",
-      "measured": false
+      "implemented": true,
+      "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Hint-based verify (2 forward NTTs); BLAKE2s XOF keeps hash-to-point on-chain (message-binding) at corelib cost. Fragile signing; Cat-1.",
+      "measured": true,
+      "verify_l2_gas": 76248400,
+      "verify_steps": 668947,
+      "verify_builtins": {
+        "range_check": 118210
+      },
+      "calldata_l2_gas": 455680,
+      "pct_of_gas_cap": 76.2484,
+      "pct_of_step_cap": 66.8947,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
+          "flat_steps": 353244,
+          "flat_pct": 52.79,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::split[159-302]",
+          "flat_steps": 102368,
+          "flat_pct": 15.3,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::ntt",
+          "flat_steps": 77678,
+          "flat_pct": 11.61,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint[999-1450]",
+          "flat_steps": 50360,
+          "flat_pct": 7.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
+          "flat_steps": 47589,
+          "flat_pct": 7.11,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]",
+          "flat_steps": 19936,
+          "flat_pct": 2.98,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
+          "flat_steps": 7119,
+          "flat_pct": 1.06,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
+          "flat_steps": 7108,
+          "flat_pct": 1.06,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1157-1845]",
+          "flat_steps": 2709,
+          "flat_pct": 0.4,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
+          "flat_steps": 243,
+          "flat_pct": 0.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::limbs_128",
+          "flat_steps": 214,
+          "flat_pct": 0.03,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512",
+          "flat_steps": 131,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::bench_fixture::signature",
+          "flat_steps": 124,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512Verifier::verify",
+          "flat_steps": 107,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512",
+          "flat_steps": 85,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
+          "flat_steps": 65,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 31,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512__snforge_internal_test_generated",
+          "flat_steps": 23,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
+          "flat_steps": 1,
+          "flat_pct": 0.0,
+          "harness": true
+        }
+      ]
+    },
+    {
+      "key": "falcon_512_direct",
+      "label": "Falcon-512 direct (no hint)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_direct",
+      "baseline_test": "bench_baseline_falcon_512_direct",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); hash-to-point XOF swapped to BLAKE2s (non-standard)",
+      "on_chain_hash": "BLAKE2s hash-to-point (on-chain)",
+      "offchain_prep": "none beyond signing (no hint)",
+      "sig_felts": 31,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "Textbook verification equation: s1*h computed on-chain as INTT(NTT(s1) . h_ntt) \u2014 2 transforms because the pk is stored NTT-domain (a coefficient-domain pk needs 3 and busts the gas cap, cf. ericnordelo/pq-verifiers#1). Half the signature calldata of the hint variant; no signer-supplied hint in the trust surface.",
+      "measured": true,
+      "verify_l2_gas": 76153420,
+      "verify_steps": 667762,
+      "verify_builtins": {
+        "range_check": 119006
+      },
+      "calldata_l2_gas": 307200,
+      "pct_of_gas_cap": 76.1534,
+      "pct_of_step_cap": 66.7762,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::ntt::split_ntt[247-592]",
+          "flat_steps": 193006,
+          "flat_pct": 28.87,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
+          "flat_steps": 176622,
+          "flat_pct": 26.42,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::split[159-302]",
+          "flat_steps": 51184,
+          "flat_pct": 7.66,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::merge[147-284]",
+          "flat_steps": 47088,
+          "flat_pct": 7.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::intt",
+          "flat_steps": 43202,
+          "flat_pct": 6.46,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::ntt",
+          "flat_steps": 38839,
+          "flat_pct": 5.81,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct[956-1170]",
+          "flat_steps": 32945,
+          "flat_pct": 4.93,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
+          "flat_steps": 31719,
+          "flat_pct": 4.75,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]",
+          "flat_steps": 19936,
+          "flat_pct": 2.98,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::mul_ntt[203-351]",
+          "flat_steps": 17936,
+          "flat_pct": 2.68,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
+          "flat_steps": 4746,
+          "flat_pct": 0.71,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
+          "flat_steps": 3554,
+          "flat_pct": 0.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots_inv",
+          "flat_steps": 3554,
+          "flat_pct": 0.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1157-1845]",
+          "flat_steps": 2709,
+          "flat_pct": 0.41,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::signature_direct[219-294]",
+          "flat_steps": 479,
+          "flat_pct": 0.07,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::limbs_128",
+          "flat_steps": 214,
+          "flat_pct": 0.03,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
+          "flat_steps": 162,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512",
+          "flat_steps": 131,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::bench_fixture::signature",
+          "flat_steps": 124,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_direct",
+          "flat_steps": 101,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512DirectVerifier::verify",
+          "flat_steps": 83,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct",
+          "flat_steps": 65,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 31,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_direct__snforge_internal_test_generated",
+          "flat_steps": 23,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
+          "flat_steps": 1,
+          "flat_pct": 0.0,
+          "harness": true
+        }
+      ]
     },
     {
       "key": "ml_dsa_44",

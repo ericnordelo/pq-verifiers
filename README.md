@@ -1,7 +1,7 @@
 # PQ verifiers for Starknet accounts
 
 _Comparing candidate post quantum signature verifiers for a Starknet account by their
-verification cost. Maintained by OpenZeppelin. Last updated: June 24, 2026._
+verification cost. Maintained by OpenZeppelin. Last updated: July 3, 2026._
 
 ## Why
 
@@ -27,13 +27,21 @@ verifier has to fit under both.
 | Scheme | Status | Verify (L2 gas) | Inside `__validate__` (L2 gas) | % of gas cap |
 |---|---|--:|--:|--:|
 | ECDSA-STARK | baseline (classical control) | 30,855 | 160,795 | 0.16% |
-| Falcon-512 | pending | — | — | — |
+| Falcon-512 (hint) | measured (bare verify) | 76,248,400 | — | 76.2% |
+| Falcon-512 direct (no hint) | measured (bare verify) | 76,153,420 | — | 76.2% |
 | ML-DSA-44 | pending | — | — | — |
 | Poseidon-WOTS+ | pending | — | — | — |
 
 ECDSA-STARK is the classical scheme in use today, a cost reference rather than a PQ
-candidate. The PQ verifiers are scaffolded behind a common interface and implemented next
-(see `crates/`).
+candidate. Falcon-512 is the first PQ verifier measured, in two variants sharing the same
+NTT-domain public key and on-chain BLAKE2s hash-to-point (non-standard XOF swap from
+SHAKE-256), both validated by a genuine falcon.py-signed fixture and both fitting the
+validation caps at ~76% of L2 gas / ~67% of steps. The variants cost the same because the
+NTT-domain key makes each need exactly two 512-point transforms; the direct one carries
+half the signature calldata (31 vs 60 felts) and no signer-supplied hint, so it dominates
+here. (With a coefficient-domain key the direct method needs a third transform and busts
+the budget — measured in [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).)
+The remaining PQ verifiers are scaffolded behind the same interface (see `crates/`).
 
 ## Report
 
@@ -62,7 +70,7 @@ make test       # run the test suite
 | Crate | Scheme | Family | Standardization |
 |---|---|---|---|
 | [`ecdsa_stark`](crates/ecdsa_stark) | ECDSA-STARK | classical EC (control) | none |
-| [`falcon_512`](crates/falcon_512) | Falcon-512 (FN-DSA) | lattice (NTRU) | draft, FIPS 206 |
+| [`falcon_512`](crates/falcon_512) | Falcon-512 (FN-DSA), hint + direct variants | lattice (NTRU) | draft, FIPS 206 (BLAKE2s hash-to-point swap) |
 | [`ml_dsa_44`](crates/ml_dsa_44) | ML-DSA-44 (Dilithium) | lattice (module) | final, FIPS 204 |
 | [`poseidon_wots`](crates/poseidon_wots) | Poseidon-WOTS+ | hashing | not standardized |
 

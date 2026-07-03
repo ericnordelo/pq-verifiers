@@ -1,0 +1,128 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+//
+// Ported from s2morrow `packages/falcon/src/zq.cairo` (starkware-bitcoin/s2morrow@831bb518b06d);
+// `center_sq` follows feltroidprime/s2morrow@4eff9ab9f5a4 falcon.cairo's `center_and_square`.
+//
+// Note: the optimized s2morrow fork implements this module on `BoundedInt` typed ranges. At
+// cairo 2.18 the `BoundedInt` type is crate-private in corelib and const construction of
+// values crashes the const evaluator (unstable `bounded-int-utils` feature), so this port
+// keeps the upstream plain-integer arithmetic: coefficients are `u16` in `[0, Q)` by
+// construction (every function returns a `% Q` result), with u32/u64 intermediates.
+
+//! Operations on the base ring Z_q (q = 12289).
+
+/// The Falcon modulus q = 12289 = 12·1024 + 1.
+pub const Q: u16 = 12289;
+pub const Q32: u32 = 12289;
+pub const Q64: u64 = 12289;
+
+/// Largest centered-low value: (Q-1)/2. Coefficients above this represent negatives.
+pub const Q_HALF: u16 = 6144;
+
+/// Add two values modulo Q.
+#[inline(always)]
+pub fn add_mod(a: u16, b: u16) -> u16 {
+    // a, b < Q so a + b <= 24576 < 2^16: the checked u16 add never overflows.
+    (a + b) % Q
+}
+
+/// Subtract two values modulo Q, via (a + Q - b) mod Q.
+#[inline(always)]
+pub fn sub_mod(a: u16, b: u16) -> u16 {
+    // a < Q so a + Q <= 24577 < 2^16.
+    (a + Q - b) % Q
+}
+
+/// Multiply two values modulo Q.
+#[inline(always)]
+pub fn mul_mod(a: u16, b: u16) -> u16 {
+    let a: u32 = a.into();
+    let b: u32 = b.into();
+    // a·b <= 12288² < 2^31.
+    let res = (a * b) % Q32;
+    res.try_into().unwrap()
+}
+
+/// Multiply three values modulo Q with a single reduction.
+#[inline(always)]
+pub fn mul3_mod(a: u16, b: u16, c: u16) -> u16 {
+    let a: u64 = a.into();
+    let b: u64 = b.into();
+    let c: u64 = c.into();
+    // a·b·c <= 12288³ < 2^41.
+    let res = (a * b * c) % Q64;
+    res.try_into().unwrap()
+}
+
+/// Squared centered representative of a coefficient, as felt252:
+/// x ∈ [0, 6144] → x²; x ∈ [6145, 12288] → (Q - x)².
+#[inline(always)]
+pub fn center_sq(coeff: u16) -> felt252 {
+    if coeff <= Q_HALF {
+        let x: felt252 = coeff.into();
+        x * x
+    } else {
+        let x: felt252 = (Q - coeff).into();
+        x * x
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Q, add_mod, center_sq, mul3_mod, mul_mod, sub_mod};
+
+    #[test]
+    fn test_add_mod_wraps() {
+        assert_eq!(add_mod(12288, 1), 0);
+        assert_eq!(add_mod(12288, 12288), 12287); // (-1) + (-1) = -2 = q - 2
+        assert_eq!(add_mod(0, 0), 0);
+    }
+
+    #[test]
+    fn test_sub_mod_wraps() {
+        assert_eq!(sub_mod(0, 1), 12288);
+        assert_eq!(sub_mod(1, 1), 0);
+        assert_eq!(sub_mod(12288, 12287), 1);
+    }
+
+    #[test]
+    fn test_mul_mod() {
+        assert_eq!(mul_mod(12288, 12288), 1); // (-1)² = 1
+        assert_eq!(mul_mod(0, 12288), 0);
+        // SQR1 = 1479 is a square root of -1 mod q
+        assert_eq!(mul_mod(1479, 1479), Q - 1);
+        // 2 · 6145 = 12290 = 1 mod q (6145 = 2⁻¹)
+        assert_eq!(mul_mod(2, 6145), 1);
+    }
+
+    #[test]
+    fn test_mul3_mod() {
+        assert_eq!(mul3_mod(12288, 12288, 12288), 12288); // (-1)³ = -1
+        assert_eq!(mul3_mod(12288, 12288, 1), 1);
+        // 512⁻¹ = 12265 (= -24 mod q), so 512 · 12265 · 1 = 1
+        assert_eq!(mul3_mod(512, 12265, 1), 1);
+    }
+
+    #[test]
+    fn test_center_sq() {
+        assert_eq!(center_sq(0), 0);
+        assert_eq!(center_sq(1), 1);
+        assert_eq!(center_sq(6144), 6144 * 6144); // largest low-half value
+        assert_eq!(center_sq(6145), 6144 * 6144); // q - 6145 = 6144
+        assert_eq!(center_sq(12288), 1); // -1 centered is ±1
+    }
+
+    // Probe retained from the port plan: `[u16; N]` const tables are the format the
+    // generated NTT root tables use.
+    const PROBE_TABLE: [u16; 3] = [0, 6144, 12288];
+
+    #[test]
+    fn test_const_u16_table() {
+        let t = PROBE_TABLE.span();
+        assert_eq!(*t.at(0), 0);
+        assert_eq!(*t.at(1), 6144);
+        assert_eq!(*t.at(2), 12288);
+    }
+}
