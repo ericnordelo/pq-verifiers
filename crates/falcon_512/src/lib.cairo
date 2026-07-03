@@ -8,6 +8,12 @@
 
 use pqbench_interface::PqSignatureVerifier;
 
+// Ported from s2morrow (StarkWare Industries, MIT) — the looped/proven NTT that
+// PORTING.md points to. SPDX headers preserved in each module file.
+pub mod zq;
+pub mod ntt_constants;
+pub mod ntt;
+
 /// Encoding (planned): `public_key` = 29 felts (512 NTT coeffs packed base-Q),
 /// `signature` = ~22 felts (s1 + salt).
 pub impl Falcon512Verifier of PqSignatureVerifier {
