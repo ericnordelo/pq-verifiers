@@ -60,6 +60,7 @@ A change is complete only when everything it invalidates is regenerated in the s
 | The public surface of a measured crate | its benchmark pairs and `efficiency_baseline.json` entries (see below) |
 | NTT tables or the engine's arithmetic | `scripts/gen_ntt_tables.py` (model first, then `--emit`), `scripts/verify_ntt_constants.py` must still pass |
 | The toolchain (`.tool-versions`) | the README Run section, the `toolchain` field of `efficiency_baseline.json`, and a fresh `make all` |
+| The CI workflow's `name:` or filename | the README status badge (its label and URL must match) |
 | Registries (`schemes.json`, baseline) | nothing by hand elsewhere — scripts read them; never duplicate their data into docs |
 
 Generated files are never hand-edited: `results/*`, `crates/ntt/src/roots_scaled.cairo`,

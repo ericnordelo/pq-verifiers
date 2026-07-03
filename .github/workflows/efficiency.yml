@@ -1,7 +1,7 @@
-# Efficiency ratchet gate: any PR that raises a tracked cost (L2 gas or Cairo steps of
-# the benchmark pairs pinned in efficiency_baseline.json) fails. Improvements pass, and
-# should be locked in with `make ratchet` in the same PR.
-name: efficiency
+# CI: runs the test suite, then the efficiency ratchet. Any PR that raises a tracked cost
+# (L2 gas or Cairo steps of the benchmark pairs pinned in efficiency_baseline.json) fails;
+# improvements should be locked in with `make ratchet` in the same PR.
+name: CI
 
 on:
   pull_request:
