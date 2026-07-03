@@ -38,8 +38,7 @@ NTT-domain public key and on-chain BLAKE2s hash-to-point (non-standard XOF swap 
 SHAKE-256), both validated by a genuine falcon.py-signed fixture and both fitting the
 validation caps at ~36% of L2 gas / ~34% of steps. Their transforms run on the shared
 lazy-reduction NTT engine (`crates/ntt`: felt252 butterflies, at most two reduction
-passes per transform), which cut verification from the initial ~76M gas by more than
-half. The direct variant carries half the signature calldata (31 vs 60 felts) and no
+passes per transform). The direct variant carries half the signature calldata (31 vs 60 felts) and no
 signer-supplied hint at a ~4% cost premium (its INTT versus the hint's second forward
 transform). With a coefficient-domain key the direct method would need a third transform
 — measured in [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).

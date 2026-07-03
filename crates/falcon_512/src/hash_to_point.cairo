@@ -28,8 +28,7 @@ use core::blake::{blake2s_compress, blake2s_finalize};
 /// blake2s-256 initial state: the BLAKE2s IV with the standard parameter word
 /// (digest_length = 32, key = 0, fanout = 1, depth = 1) XORed into h[0].
 const BLAKE2S_256_INIT: [u32; 8] = [
-    0x6B08E647, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB,
-    0x5BE0CD19,
+    0x6B08E647, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 /// Rejection bound: the largest multiple of Q below 2^16 (5 * 12289).
@@ -106,10 +105,7 @@ fn limbs_128(x: u128) -> (u32, u32, u32, u32) {
     let (rest, l0) = DivRem::div_rem(x, two_pow_32);
     let (rest, l1) = DivRem::div_rem(rest, two_pow_32);
     let (l3, l2) = DivRem::div_rem(rest, two_pow_32);
-    (
-        l0.try_into().unwrap(), l1.try_into().unwrap(), l2.try_into().unwrap(),
-        l3.try_into().unwrap(),
-    )
+    (l0.try_into().unwrap(), l1.try_into().unwrap(), l2.try_into().unwrap(), l3.try_into().unwrap())
 }
 
 /// Little-endian u32 limbs of a 160-bit value (caller checks the range).

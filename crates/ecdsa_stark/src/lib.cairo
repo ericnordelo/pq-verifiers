@@ -15,8 +15,6 @@ pub impl EcdsaStarkVerifier of PqSignatureVerifier {
         if public_key.len() != 1 || signature.len() != 2 {
             return false;
         }
-        check_ecdsa_signature(
-            message_hash, *public_key.at(0), *signature.at(0), *signature.at(1),
-        )
+        check_ecdsa_signature(message_hash, *public_key.at(0), *signature.at(0), *signature.at(1))
     }
 }

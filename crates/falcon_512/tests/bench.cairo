@@ -100,9 +100,7 @@ fn test_falcon_512_rejects_tampered_s1() {
     // Swap two canonical s1 felts: still unpacks, but the signature no longer matches.
     let a = *sig.span().at(0);
     let b = *sig.span().at(1);
-    let tampered = with_felt_replaced(
-        with_felt_replaced(sig.span(), 0, b).span(), 1, a,
-    );
+    let tampered = with_felt_replaced(with_felt_replaced(sig.span(), 0, b).span(), 1, a);
     assert!(!Falcon512Verifier::verify(msg(), public_key().span(), tampered.span()));
     // Non-canonical s1 encoding (packed half overflows Q^9).
     let noncanonical = with_felt_replaced(
@@ -116,9 +114,7 @@ fn test_falcon_512_rejects_tampered_hint() {
     let sig = signature();
     let a = *sig.span().at(31);
     let b = *sig.span().at(32);
-    let tampered = with_felt_replaced(
-        with_felt_replaced(sig.span(), 31, b).span(), 32, a,
-    );
+    let tampered = with_felt_replaced(with_felt_replaced(sig.span(), 31, b).span(), 32, a);
     assert!(!Falcon512Verifier::verify(msg(), public_key().span(), tampered.span()));
 }
 

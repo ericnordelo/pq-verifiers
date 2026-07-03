@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 //
-// Hint-based verification equation from s2morrow `packages/falcon/src/falcon.cairo`
-// (feltroidprime/s2morrow@4eff9ab9f5a4 `verify_with_msg_point`), returning `false`
-// instead of panicking on a bad hint. `SIG_BOUND_512` matches falcon.py
-// `params[512].sig_bound` and the starkware-bitcoin fork's `sig_bound(512)`.
-// The transforms are delegated to the shared lazy-reduction engine (`pqbench_ntt`).
+// Hint-based verification equation ported from s2morrow `packages/falcon/src/falcon.cairo`
+// (feltroidprime/s2morrow@4eff9ab9f5a4 `verify_with_msg_point`). `SIG_BOUND_512` matches
+// falcon.py `params[512].sig_bound` and the starkware-bitcoin fork's `sig_bound(512)`.
 
 //! Falcon-512 signature verification.
 //!
@@ -15,7 +13,8 @@
 //! `s1 * h mod (q, phi)`), then accepts iff
 //! `||msg_point - mul_hint||^2 + ||s1||^2 <= SIG_BOUND_512` over centered
 //! representatives. Since `msg_point - s1*h = s0`, this is the Falcon verification
-//! equation with the polynomial multiplication delegated to a signer-supplied hint.
+//! equation with the polynomial multiplication delegated to a signer-supplied hint;
+//! a bad hint yields `false`.
 //!
 //! Direct variant: computes `s1 * h` on-chain as `INTT(NTT(s1) ∘ h_ntt)` — the
 //! pointwise products feed the INTT unreduced (the engine's lazy-product path).

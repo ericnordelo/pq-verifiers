@@ -1,10 +1,10 @@
 //! Correctness gate for the iterative lazy-reduction engine.
 //!
-//! Strategy: a test-local RECURSIVE ORACLE reproduces the split/merge NTT exactly as the
-//! previous in-crate implementation computed it (eager u16 arithmetic, same tables). The
-//! falcon.py known-answer vectors pin the oracle to the interop convention; differential
-//! tests then pin the engine to the oracle on every size, on pseudorandom and adversarial
-//! inputs. `scripts/gen_ntt_tables.py` carries the same argument in Python, including the
+//! Strategy: a test-local RECURSIVE ORACLE computes the tprest/falcon.py split/merge NTT
+//! directly (eager u16 arithmetic over the same root tables). The falcon.py known-answer
+//! vectors pin the oracle to the interop convention; differential tests then pin the
+//! engine to the oracle on every size, on pseudorandom and adversarial inputs.
+//! `scripts/gen_ntt_tables.py` carries the same argument in Python, including the
 //! bound-growth safety proof.
 
 use pqbench_ntt::engine::{intt, ntt};
@@ -13,7 +13,7 @@ use pqbench_ntt::falcon512::{
 };
 use pqbench_ntt::roots::{get_even_roots, get_even_roots_inv};
 
-// --- Recursive oracle (the previous implementation, test-local) ---
+// --- Recursive oracle (test-local reference implementation) ---
 
 const I2: u16 = 6145;
 const SQR1: u16 = 1479;
@@ -173,8 +173,8 @@ fn test_kat_16() {
     assert_felts_eq_u16(ntt(to_felts(f.span()).span(), @cfg).span(), expect.span());
 }
 
-/// The [1..512] ramp: first 8 outputs pinned to falcon.py (`test_ntt_512` in the previous
-/// implementation and `scripts/verify_ntt_constants.py`); the full vector is checked
+/// The [1..512] ramp: first 8 outputs pinned to falcon.py (the vector
+/// `scripts/verify_ntt_constants.py` cross-checks); the full vector is checked
 /// differentially against the oracle.
 #[test]
 fn test_kat_512_prefix_and_differential() {

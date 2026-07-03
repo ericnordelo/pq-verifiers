@@ -35,9 +35,7 @@ pub mod EcdsaStarkAccount {
         fn validate(self: @ContractState) -> felt252 {
             let tx_info = starknet::get_tx_info().unbox();
             let valid = EcdsaStarkVerifier::verify(
-                tx_info.transaction_hash,
-                array![self.public_key.read()].span(),
-                tx_info.signature,
+                tx_info.transaction_hash, array![self.public_key.read()].span(), tx_info.signature,
             );
             assert!(valid, "invalid signature");
             starknet::VALIDATED

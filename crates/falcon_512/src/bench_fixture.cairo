@@ -3,7 +3,8 @@
 //! Falcon-512+BLAKE2s bench fixture: a genuine keypair (tprest/falcon.py NTRU keygen)
 //! and signature over 'BENCH_MSG' from the reference ffSampling sampler, with the
 //! BLAKE2s hash-to-point of `hash_to_point.cairo`.
-//! salt = 0x6ea23548a44d971fb0b47f7b53cb9cf918c03a7d3015f68cf8ec1ce99c8a04c5ec30e495f8a0934e, ||s0||^2 + ||s1||^2 = 27616781 (bound 34034726).
+//! salt = 0x6ea23548a44d971fb0b47f7b53cb9cf918c03a7d3015f68cf8ec1ce99c8a04c5ec30e495f8a0934e,
+//! ||s0||^2 + ||s1||^2 = 27616781 (bound 34034726).
 
 /// The benchmark message hash ('BENCH_MSG').
 pub fn msg() -> felt252 {
@@ -76,8 +77,7 @@ pub fn signature() -> Array<felt252> {
         0x165739874fd102c9fc37c801a48f2904cdfc59961b261bbaf538361a71a008,
         0x4c6dfd602f2c0dee23b0c203728a26b00163d240d907318d191d64468ab30ec,
         0x4bb743f979df592f5b5513aafae8d7f04c4920437714b4eec71621a81e0bf11,
-        0x2ce05bf447ad1d530e38bf7159,
-        0x7d3ac018f99ccb537b7fb4b01f974da44835a26e,
+        0x2ce05bf447ad1d530e38bf7159, 0x7d3ac018f99ccb537b7fb4b01f974da44835a26e,
         0x4e93a0f895e430ecc5048a9ce91cecf88cf61530,
         0x4424b86843d38c323d9653c28b238cd035613b8304c1d697fa631e0cd392f52,
         0x237c6ae2f8a0b8a0ffc726f217056c800436c8d4ee15bb9b932e3c841eb2e4a,
