@@ -6,6 +6,7 @@ members = [
     "crates/ml_dsa_44",
     "crates/poseidon_wots",
     "crates/bench_targets",
+    "crates/ntt",
 ]
 
 [workspace.package]

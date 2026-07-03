@@ -3,10 +3,14 @@
 Status: **implemented and measured** (all six steps done). Decisions taken, where they
 deviate from or refine the plan below:
 
-- **NTT**: the looped split/merge NTT (starkware-bitcoin fork), not the 11.6k-line unrolled
-  one; root tables independently verified by `scripts/verify_ntt_constants.py`, including a
-  cross-check against tprest/falcon.py that pins the interop convention. ~33M l2_gas per
-  512-point transform.
+- **NTT**: delegated to the shared engine crate (`crates/ntt`): the split/merge transform
+  reformulated iteratively with felt252 lazy reduction (~8.9M l2_gas per forward 512-point
+  transform, ~13.8M per inverse — down from ~33M for the eager looped port this crate
+  originally embedded). Root tables (moved verbatim to `crates/ntt/src/roots.cairo`) are
+  independently verified by `scripts/verify_ntt_constants.py`, including a cross-check
+  against tprest/falcon.py that pins the interop convention; the engine itself is proven
+  against the recursive reference by `scripts/gen_ntt_tables.py` and the in-crate oracle
+  tests.
 - **Variants**: both are registered in `schemes.json` and measured.
   - *Hint-based* (`falcon_512`): 2 forward NTTs; signature carries `mul_hint = s1*h`
     (+29 felts).

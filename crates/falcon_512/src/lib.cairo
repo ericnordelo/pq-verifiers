@@ -12,11 +12,8 @@
 pub mod bench_fixture;
 pub mod falcon;
 pub mod hash_to_point;
-pub mod ntt;
-pub mod ntt_constants;
 pub mod packing;
 pub mod zq;
-
 use pqbench_interface::PqSignatureVerifier;
 
 /// Hint-variant signature layout: packed s1 (29 felts) || salt (2 felts, 20 LE bytes

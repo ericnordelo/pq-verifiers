@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independently verify the NTT root tables in crates/falcon_512/src/ntt_constants.cairo.
+"""Independently verify the NTT root tables in crates/ntt/src/roots.cairo.
 
 The tables were ported verbatim from s2morrow (starkware-bitcoin/s2morrow@831bb518b06d).
 This script re-derives their defining properties from first principles instead of
@@ -32,9 +32,7 @@ SQR1 = 1479  # square root of -1 mod q; the two roots of x^2 + 1 are +-SQR1
 I2 = 6145  # inverse of 2 mod q
 DEGREES = [4, 8, 16, 32, 64, 128, 256, 512]
 
-CAIRO_FILE = Path(__file__).resolve().parent.parent / (
-    "crates/falcon_512/src/ntt_constants.cairo"
-)
+CAIRO_FILE = Path(__file__).resolve().parent.parent / "crates/ntt/src/roots.cairo"
 
 # degree n (output size of merge_ntt) -> Cairo const holding its n/2 merge roots;
 # the tables are named after the cyclotomic phi_{2n} = x^n + 1 they are roots of.

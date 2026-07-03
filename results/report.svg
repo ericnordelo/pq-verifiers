@@ -1,19 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 324" width="720" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">
 <rect x="0.5" y="0.5" width="719" height="323" rx="12" fill="#ffffff" stroke="#e3e3e3"/>
 <text x="24" y="34" font-size="18" font-weight="600" fill="#1a1a1a">Post-quantum verifier benchmark — Starknet</text>
-<text x="24" y="55" font-size="12" fill="#666666">In-validate verification cost vs the 100M L2-gas validation cap · updated 2026-07-03 11:30</text>
+<text x="24" y="55" font-size="12" fill="#666666">In-validate verification cost vs the 100M L2-gas validation cap · updated 2026-07-03 14:35</text>
 <text x="24" y="96" font-size="13" fill="#1a1a1a">ECDSA-STARK (baseline)</text>
 <rect x="230" y="82" width="250" height="20" rx="5" fill="#f0f0f0"/>
 <rect x="230" y="82" width="2" height="20" rx="5" fill="#185FA5"/>
 <text x="696" y="96" font-size="12" fill="#333333" text-anchor="end">160,795 L2 gas (0.1608% of cap)</text>
 <text x="24" y="136" font-size="13" fill="#1a1a1a">Falcon-512 (FN-DSA)</text>
 <rect x="230" y="122" width="250" height="20" rx="5" fill="#f0f0f0"/>
-<rect x="230" y="122" width="250" height="20" rx="5" fill="#185FA5"/>
-<text x="696" y="136" font-size="12" fill="#333333" text-anchor="end">76,248,400 L2 gas (76.2484% of cap)</text>
+<rect x="230" y="122" width="240" height="20" rx="5" fill="#185FA5"/>
+<text x="696" y="136" font-size="12" fill="#333333" text-anchor="end">35,643,340 L2 gas (35.6433% of cap)</text>
 <text x="24" y="176" font-size="13" fill="#1a1a1a">Falcon-512 direct (no hint)</text>
 <rect x="230" y="162" width="250" height="20" rx="5" fill="#f0f0f0"/>
 <rect x="230" y="162" width="250" height="20" rx="5" fill="#185FA5"/>
-<text x="696" y="176" font-size="12" fill="#333333" text-anchor="end">76,153,420 L2 gas (76.1534% of cap)</text>
+<text x="696" y="176" font-size="12" fill="#333333" text-anchor="end">37,190,480 L2 gas (37.1905% of cap)</text>
 <text x="24" y="216" font-size="13" fill="#1a1a1a">ML-DSA-44 (Dilithium)</text>
 <rect x="230" y="202" width="250" height="20" rx="5" fill="#f0f0f0"/>
 <text x="240" y="216" font-size="12" fill="#9a9a9a">pending implementation</text>

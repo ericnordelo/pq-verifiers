@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-07-03 11:30",
+    "generated": "2026-07-03 14:35",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -49,8 +49,8 @@
       "verify_l2_gas": 30855,
       "verify_steps": 152,
       "verify_builtins": {
-        "range_check": 7,
-        "ec_op": 3
+        "ec_op": 3,
+        "range_check": 7
       },
       "calldata_l2_gas": 15360,
       "pct_of_gas_cap": 0.0309,
@@ -119,130 +119,166 @@
       "implemented": true,
       "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Hint-based verify (2 forward NTTs); BLAKE2s XOF keeps hash-to-point on-chain (message-binding) at corelib cost. Fragile signing; Cat-1.",
       "measured": true,
-      "verify_l2_gas": 76248400,
-      "verify_steps": 668947,
+      "verify_l2_gas": 35643340,
+      "verify_steps": 322958,
       "verify_builtins": {
-        "range_check": 118210
+        "range_check": 41934
       },
       "calldata_l2_gas": 455680,
-      "pct_of_gas_cap": 76.2484,
-      "pct_of_step_cap": 66.8947,
+      "pct_of_gas_cap": 35.6433,
+      "pct_of_step_cap": 32.2958,
       "fits_gas_cap": true,
       "fits_step_cap": true,
       "verify_profile": [
         {
-          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
-          "flat_steps": 353244,
-          "flat_pct": 52.79,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::split[159-302]",
-          "flat_steps": 102368,
-          "flat_pct": 15.3,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::ntt",
-          "flat_steps": 77678,
-          "flat_pct": 11.61,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::falcon::verify_512_with_hint[999-1450]",
-          "flat_steps": 50360,
-          "flat_pct": 7.53,
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint[1147-1717]",
+          "flat_steps": 49336,
+          "flat_pct": 15.27,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
           "flat_steps": 47589,
-          "flat_pct": 7.11,
+          "flat_pct": 14.73,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[520-1822]",
+          "flat_steps": 40920,
+          "flat_pct": 12.66,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[2011-2286]",
+          "flat_steps": 38656,
+          "flat_pct": 11.96,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::reduce_pass[256-1385]",
+          "flat_steps": 33856,
+          "flat_pct": 10.48,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt[839-1096]",
+          "flat_steps": 21024,
+          "flat_pct": 6.51,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]",
           "flat_steps": 19936,
-          "flat_pct": 2.98,
+          "flat_pct": 6.17,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::falcon512::to_felts[97-179]",
+          "flat_steps": 15582,
+          "flat_pct": 4.82,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::to_felts[148-230]",
+          "flat_steps": 15388,
+          "flat_pct": 4.76,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[1869-2320]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "flat_steps": 13488,
+          "flat_pct": 4.17,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
           "flat_steps": 7119,
-          "flat_pct": 1.06,
+          "flat_pct": 2.2,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
-          "flat_steps": 7108,
-          "flat_pct": 1.06,
+          "function": "pqbench_ntt::engine::merge_level[1869-2320]",
+          "flat_steps": 6956,
+          "flat_pct": 2.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[378-1856]",
+          "flat_steps": 6426,
+          "flat_pct": 1.99,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1157-1845]",
           "flat_steps": 2709,
-          "flat_pct": 0.4,
+          "flat_pct": 0.84,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt[1276-1856]",
+          "flat_steps": 1196,
+          "flat_pct": 0.37,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[378-1856]{NotSpecialized, 0, NotSpecialized, NotSpecialized, array![], NotSpecialized, NotSpecialized, }",
+          "flat_steps": 576,
+          "flat_pct": 0.18,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::falcon512::config_with_perm[300-521]{NotSpecialized, NotSpecialized, NotSpecialized, @512, }",
+          "flat_steps": 428,
+          "flat_pct": 0.13,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
           "flat_steps": 243,
-          "flat_pct": 0.04,
+          "flat_pct": 0.08,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::hash_to_point::limbs_128",
           "flat_steps": 214,
-          "flat_pct": 0.03,
+          "flat_pct": 0.07,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::roots::get_even_roots",
+          "flat_steps": 152,
+          "flat_pct": 0.05,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::roots_scaled::get_scaled_inv_roots",
+          "flat_steps": 152,
+          "flat_pct": 0.05,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
+          "flat_steps": 146,
+          "flat_pct": 0.05,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt",
+          "flat_steps": 136,
+          "flat_pct": 0.04,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512",
           "flat_steps": 131,
-          "flat_pct": 0.02,
+          "flat_pct": 0.04,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::bench_fixture::signature",
-          "flat_steps": 124,
-          "flat_pct": 0.02,
+          "function": "pqbench_ntt::engine::ntt[1276-1856]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 1, NotSpecialized, 2, NotSpecialized, }",
+          "flat_steps": 128,
+          "flat_pct": 0.04,
           "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::Falcon512Verifier::verify",
-          "flat_steps": 107,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512",
-          "flat_steps": 85,
-          "flat_pct": 0.01,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
-          "flat_steps": 65,
-          "flat_pct": 0.01,
-          "harness": false
-        },
-        {
-          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
-          "flat_steps": 31,
-          "flat_pct": 0.0,
-          "harness": true
-        },
-        {
-          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512__snforge_internal_test_generated",
-          "flat_steps": 23,
-          "flat_pct": 0.0,
-          "harness": true
-        },
-        {
-          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
-          "flat_steps": 1,
-          "flat_pct": 0.0,
-          "harness": true
         }
       ]
     },
@@ -262,166 +298,166 @@
       "implemented": true,
       "notes": "Textbook verification equation: s1*h computed on-chain as INTT(NTT(s1) . h_ntt) \u2014 2 transforms because the pk is stored NTT-domain (a coefficient-domain pk needs 3 and busts the gas cap, cf. ericnordelo/pq-verifiers#1). Half the signature calldata of the hint variant; no signer-supplied hint in the trust surface.",
       "measured": true,
-      "verify_l2_gas": 76153420,
-      "verify_steps": 667762,
+      "verify_l2_gas": 37190480,
+      "verify_steps": 340697,
       "verify_builtins": {
-        "range_check": 119006
+        "range_check": 39886
       },
       "calldata_l2_gas": 307200,
-      "pct_of_gas_cap": 76.1534,
-      "pct_of_step_cap": 66.7762,
+      "pct_of_gas_cap": 37.1905,
+      "pct_of_step_cap": 34.0697,
       "fits_gas_cap": true,
       "fits_step_cap": true,
       "verify_profile": [
         {
-          "function": "pqbench_falcon_512::ntt::split_ntt[247-592]",
-          "flat_steps": 193006,
-          "flat_pct": 28.87,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
-          "flat_steps": 176622,
-          "flat_pct": 26.42,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::split[159-302]",
-          "flat_steps": 51184,
-          "flat_pct": 7.66,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::merge[147-284]",
-          "flat_steps": 47088,
-          "flat_pct": 7.04,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::intt",
-          "flat_steps": 43202,
-          "flat_pct": 6.46,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::ntt::ntt",
-          "flat_steps": 38839,
-          "flat_pct": 5.81,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::falcon::verify_512_direct[956-1170]",
-          "flat_steps": 32945,
-          "flat_pct": 4.93,
+          "function": "pqbench_falcon_512::falcon::verify_512_direct[1437-1778]",
+          "flat_steps": 34993,
+          "flat_pct": 10.25,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
           "flat_steps": 31719,
-          "flat_pct": 4.75,
+          "flat_pct": 9.29,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[519-1227]",
+          "flat_steps": 27756,
+          "flat_pct": 8.13,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::reduce_pass[256-1385]",
+          "flat_steps": 25648,
+          "flat_pct": 7.51,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[1722-1989]",
+          "flat_steps": 21888,
+          "flat_pct": 6.41,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[520-1822]",
+          "flat_steps": 20460,
+          "flat_pct": 5.99,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]",
           "flat_steps": 19936,
-          "flat_pct": 2.98,
+          "flat_pct": 5.84,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::ntt::mul_ntt[203-351]",
-          "flat_steps": 17936,
-          "flat_pct": 2.68,
+          "function": "pqbench_ntt::engine::merge_level[2011-2286]",
+          "flat_steps": 19328,
+          "flat_pct": 5.66,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[2487-2689]",
+          "flat_steps": 18958,
+          "flat_pct": 5.55,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::falcon512::to_felts[97-179]",
+          "flat_steps": 15582,
+          "flat_pct": 4.56,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[1568-2155]",
+          "flat_steps": 11930,
+          "flat_pct": 3.49,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct[1017-1168]",
+          "flat_steps": 10768,
+          "flat_pct": 3.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt[839-1096]",
+          "flat_steps": 10512,
+          "flat_pct": 3.08,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[2026-2121]",
+          "flat_steps": 10368,
+          "flat_pct": 3.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[1264-1521]",
+          "flat_steps": 9840,
+          "flat_pct": 2.88,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::to_felts[148-230]",
+          "flat_steps": 7694,
+          "flat_pct": 2.25,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[1128-1201]",
+          "flat_steps": 7694,
+          "flat_pct": 2.25,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[2125-2308]",
+          "flat_steps": 7184,
+          "flat_pct": 2.1,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[1869-2320]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "flat_steps": 6744,
+          "flat_pct": 1.98,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
           "flat_steps": 4746,
-          "flat_pct": 0.71,
+          "flat_pct": 1.39,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
-          "flat_steps": 3554,
-          "flat_pct": 0.53,
+          "function": "pqbench_ntt::engine::split_level[365-1555]",
+          "flat_steps": 3984,
+          "flat_pct": 1.17,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::ntt_constants::get_even_roots_inv",
-          "flat_steps": 3554,
-          "flat_pct": 0.53,
+          "function": "pqbench_ntt::engine::merge_level[1869-2320]",
+          "flat_steps": 3478,
+          "flat_pct": 1.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[378-1856]",
+          "flat_steps": 3213,
+          "flat_pct": 0.94,
           "harness": false
         },
         {
           "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1157-1845]",
           "flat_steps": 2709,
-          "flat_pct": 0.41,
+          "flat_pct": 0.79,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512_integrationtest::bench::signature_direct[219-294]",
-          "flat_steps": 479,
-          "flat_pct": 0.07,
+          "function": "pqbench_ntt::engine::intt[1271-1685]",
+          "flat_steps": 743,
+          "flat_pct": 0.22,
           "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::hash_to_point::limbs_128",
-          "flat_steps": 214,
-          "flat_pct": 0.03,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
-          "flat_steps": 162,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512",
-          "flat_steps": 131,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::bench_fixture::signature",
-          "flat_steps": 124,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_direct",
-          "flat_steps": 101,
-          "flat_pct": 0.02,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::Falcon512DirectVerifier::verify",
-          "flat_steps": 83,
-          "flat_pct": 0.01,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::falcon::verify_512_direct",
-          "flat_steps": 65,
-          "flat_pct": 0.01,
-          "harness": false
-        },
-        {
-          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
-          "flat_steps": 31,
-          "flat_pct": 0.0,
-          "harness": true
-        },
-        {
-          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512_direct__snforge_internal_test_generated",
-          "flat_steps": 23,
-          "flat_pct": 0.0,
-          "harness": true
-        },
-        {
-          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
-          "flat_steps": 1,
-          "flat_pct": 0.0,
-          "harness": true
         }
       ]
     },

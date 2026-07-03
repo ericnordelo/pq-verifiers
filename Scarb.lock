@@ -24,6 +24,7 @@ name = "pqbench_falcon_512"
 version = "0.1.0"
 dependencies = [
  "pqbench_interface",
+ "pqbench_ntt",
  "snforge_std",
 ]
 
@@ -36,6 +37,13 @@ name = "pqbench_ml_dsa_44"
 version = "0.1.0"
 dependencies = [
  "pqbench_interface",
+ "snforge_std",
+]
+
+[[package]]
+name = "pqbench_ntt"
+version = "0.1.0"
+dependencies = [
  "snforge_std",
 ]
 

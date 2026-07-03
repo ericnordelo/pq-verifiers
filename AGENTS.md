@@ -23,8 +23,24 @@ ecosystem and OpenZeppelin. It will later inform a production account component,
    it accepts (a genuine signature) *and* rejects when tampered, before `"implemented": true`.
    Stubs are allowed but must be labelled as such and excluded from headline numbers.
 4. **Results are generated, not hand-edited.** Regenerate `results/` with `make all`.
+   The same applies to generated Cairo (`crates/ntt/src/roots_scaled.cairo`,
+   `crates/ntt/src/bitrev.cairo`): regenerate with `python3 scripts/gen_ntt_tables.py
+   --emit`, never edit by hand.
+5. **Efficiency is a one-way ratchet.** `efficiency_baseline.json` pins the cost (L2 gas
+   and Cairo steps) of every tracked benchmark pair, and CI fails any change that raises
+   a number. After any change, run `make check-eff`; lock improvements with `make
+   ratchet` in the same PR. Raising an entry is a deliberate human decision that must be
+   justified explicitly in the commit that needs it — never "adjusted" to make CI pass.
 5. **Keep the toolchain pinned** in `.tool-versions`. If you change it, say why in the README.
 6. **Date the README** (`Last updated:`) whenever you change what it describes.
+
+## Crate kinds
+
+Verifier crates (one per scheme) implement `PqSignatureVerifier` and follow the flow
+below. **Component crates** (currently `crates/ntt`) hold shared building blocks: they
+carry their own paired benchmarks, are tracked in the efficiency ratchet, and their
+correctness argument must be executable (reference oracle tests in Cairo plus a Python
+model in `scripts/`), not prose.
 
 ## The measurement contract (do not break)
 

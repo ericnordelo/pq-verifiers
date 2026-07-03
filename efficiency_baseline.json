@@ -1,0 +1,51 @@
+{
+  "_doc": "Efficiency ratchet (see scripts/check_efficiency.py). Each entry pins the paired-subtraction cost (test minus baseline) in L2 gas and Cairo steps. CI fails any change that raises a number; `make ratchet` locks improvements in. Raising an entry is a deliberate, explicitly-justified edit in the commit that needs it.",
+  "toolchain": {
+    "scarb": "2.18.0",
+    "snforge": "0.59.0"
+  },
+  "entries": {
+    "ntt_fwd_512": {
+      "package": "pqbench_ntt",
+      "test": "bench_ntt_fwd_512",
+      "baseline": "bench_ntt_base_512",
+      "l2_gas": 8895740,
+      "steps": 81826
+    },
+    "ntt_roundtrip_512": {
+      "package": "pqbench_ntt",
+      "test": "bench_ntt_roundtrip_512",
+      "baseline": "bench_ntt_base_512",
+      "l2_gas": 22725980,
+      "steps": 211044
+    },
+    "ecdsa_stark_verify": {
+      "package": "pqbench_ecdsa_stark",
+      "test": "bench_verify_ecdsa_stark",
+      "baseline": "bench_baseline_ecdsa_stark",
+      "l2_gas": 30855,
+      "steps": 152
+    },
+    "ecdsa_stark_validate": {
+      "package": "pqbench_targets",
+      "test": "bench_validate_ecdsa_stark",
+      "baseline": "bench_validate_base_ecdsa_stark",
+      "l2_gas": 160795,
+      "steps": 1437
+    },
+    "falcon_512_verify": {
+      "package": "pqbench_falcon_512",
+      "test": "bench_verify_falcon_512",
+      "baseline": "bench_baseline_falcon_512",
+      "l2_gas": 35643340,
+      "steps": 322958
+    },
+    "falcon_512_direct_verify": {
+      "package": "pqbench_falcon_512",
+      "test": "bench_verify_falcon_512_direct",
+      "baseline": "bench_baseline_falcon_512_direct",
+      "l2_gas": 37190480,
+      "steps": 340697
+    }
+  }
+}

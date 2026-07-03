@@ -1,7 +1,15 @@
-.PHONY: all bench profile report clean test
+.PHONY: all bench profile report clean test check-eff ratchet
 
 # Full pipeline: measure -> profile -> render the HTML report.
 all: bench profile report
+
+# Efficiency ratchet: fail on any cost regression vs efficiency_baseline.json.
+check-eff:
+	python3 scripts/check_efficiency.py
+
+# Lock measured improvements into the baseline (never raises an entry).
+ratchet:
+	python3 scripts/check_efficiency.py --update
 
 bench:
 	python3 scripts/run_bench.py

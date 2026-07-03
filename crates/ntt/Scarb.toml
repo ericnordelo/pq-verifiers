@@ -1,5 +1,5 @@
 [package]
-name = "pqbench_falcon_512"
+name = "pqbench_ntt"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -8,8 +8,6 @@ authors.workspace = true
 
 [dependencies]
 starknet.workspace = true
-pqbench_interface.workspace = true
-pqbench_ntt = { path = "../ntt" }
 
 [dev-dependencies]
 snforge_std.workspace = true

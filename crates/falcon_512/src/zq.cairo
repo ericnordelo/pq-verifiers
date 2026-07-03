@@ -45,17 +45,6 @@ pub fn mul_mod(a: u16, b: u16) -> u16 {
     res.try_into().unwrap()
 }
 
-/// Multiply three values modulo Q with a single reduction.
-#[inline(always)]
-pub fn mul3_mod(a: u16, b: u16, c: u16) -> u16 {
-    let a: u64 = a.into();
-    let b: u64 = b.into();
-    let c: u64 = c.into();
-    // a·b·c <= 12288³ < 2^41.
-    let res = (a * b * c) % Q64;
-    res.try_into().unwrap()
-}
-
 /// Squared centered representative of a coefficient, as felt252:
 /// x ∈ [0, 6144] → x²; x ∈ [6145, 12288] → (Q - x)².
 #[inline(always)]
@@ -71,7 +60,7 @@ pub fn center_sq(coeff: u16) -> felt252 {
 
 #[cfg(test)]
 mod tests {
-    use super::{Q, add_mod, center_sq, mul3_mod, mul_mod, sub_mod};
+    use super::{Q, add_mod, center_sq, mul_mod, sub_mod};
 
     #[test]
     fn test_add_mod_wraps() {
@@ -95,14 +84,6 @@ mod tests {
         assert_eq!(mul_mod(1479, 1479), Q - 1);
         // 2 · 6145 = 12290 = 1 mod q (6145 = 2⁻¹)
         assert_eq!(mul_mod(2, 6145), 1);
-    }
-
-    #[test]
-    fn test_mul3_mod() {
-        assert_eq!(mul3_mod(12288, 12288, 12288), 12288); // (-1)³ = -1
-        assert_eq!(mul3_mod(12288, 12288, 1), 1);
-        // 512⁻¹ = 12265 (= -24 mod q), so 512 · 12265 · 1 = 1
-        assert_eq!(mul3_mod(512, 12265, 1), 1);
     }
 
     #[test]

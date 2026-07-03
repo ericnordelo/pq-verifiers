@@ -27,8 +27,8 @@ verifier has to fit under both.
 | Scheme | Status | Verify (L2 gas) | Inside `__validate__` (L2 gas) | % of gas cap |
 |---|---|--:|--:|--:|
 | ECDSA-STARK | baseline (classical control) | 30,855 | 160,795 | 0.16% |
-| Falcon-512 (hint) | measured (bare verify) | 76,248,400 | — | 76.2% |
-| Falcon-512 direct (no hint) | measured (bare verify) | 76,153,420 | — | 76.2% |
+| Falcon-512 (hint) | measured (bare verify) | 35,643,340 | — | 35.6% |
+| Falcon-512 direct (no hint) | measured (bare verify) | 37,190,480 | — | 37.2% |
 | ML-DSA-44 | pending | — | — | — |
 | Poseidon-WOTS+ | pending | — | — | — |
 
@@ -36,11 +36,13 @@ ECDSA-STARK is the classical scheme in use today, a cost reference rather than a
 candidate. Falcon-512 is the first PQ verifier measured, in two variants sharing the same
 NTT-domain public key and on-chain BLAKE2s hash-to-point (non-standard XOF swap from
 SHAKE-256), both validated by a genuine falcon.py-signed fixture and both fitting the
-validation caps at ~76% of L2 gas / ~67% of steps. The variants cost the same because the
-NTT-domain key makes each need exactly two 512-point transforms; the direct one carries
-half the signature calldata (31 vs 60 felts) and no signer-supplied hint, so it dominates
-here. (With a coefficient-domain key the direct method needs a third transform and busts
-the budget — measured in [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).)
+validation caps at ~36% of L2 gas / ~34% of steps. Their transforms run on the shared
+lazy-reduction NTT engine (`crates/ntt`: felt252 butterflies, at most two reduction
+passes per transform), which cut verification from the initial ~76M gas by more than
+half. The direct variant carries half the signature calldata (31 vs 60 felts) and no
+signer-supplied hint at a ~4% cost premium (its INTT versus the hint's second forward
+transform). With a coefficient-domain key the direct method would need a third transform
+— measured in [ericnordelo/pq-verifiers#1](https://github.com/ericnordelo/pq-verifiers/pull/1).
 The remaining PQ verifiers are scaffolded behind the same interface (see `crates/`).
 
 ## Report
@@ -63,7 +65,13 @@ cairo-profiler 0.16.0). Install it with [asdf](https://asdf-vm.com) or
 ```bash
 make all        # measure, profile, then render the report
 make test       # run the test suite
+make check-eff  # efficiency ratchet: fail if any tracked cost regressed
+make ratchet    # lock measured improvements into efficiency_baseline.json
 ```
+
+Efficiency is a one-way ratchet: `efficiency_baseline.json` pins the cost of every
+tracked benchmark pair (L2 gas and steps), CI fails any change that raises a number,
+and improvements are committed via `make ratchet`.
 
 ## Schemes
 
@@ -91,9 +99,11 @@ crates/
   falcon_512/
   ml_dsa_44/
   poseidon_wots/
+  ntt/               # shared lazy-reduction NTT engine (used by the lattice schemes)
   bench_targets/     # account mock contracts for the validate scenario
-scripts/             # run_bench.py, profile.py, gen_report.py
+scripts/             # run_bench.py, profile.py, gen_report.py, check_efficiency.py
 schemes.json         # the scheme registry
+efficiency_baseline.json  # the efficiency ratchet (CI-enforced)
 results/             # generated report plus committed snapshot
 ```
 
