@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { CallData, hash, stark, transaction } from "starknet";
 import type {
   CreateStarknetSignerInput,
   ExternalSignerRequest,
@@ -15,6 +16,10 @@ function assertExternalSigner(material: SignerMaterial): asserts material is Ext
   if (material.kind !== "external-command") {
     throw new Error("This scheme expects --signer-command instead of --private-key.");
   }
+}
+
+function externalSignerJson(value: ExternalSignerRequest): string {
+  return JSON.stringify(value, (_key, item) => (typeof item === "bigint" ? `0x${item.toString(16)}` : item));
 }
 
 export async function runExternalSigner(material: SignerMaterial, request: ExternalSignerRequest): Promise<ExternalResult> {
@@ -46,7 +51,7 @@ export async function runExternalSigner(material: SignerMaterial, request: Exter
       }
     });
 
-    child.stdin.end(`${JSON.stringify(request)}\n`);
+    child.stdin.end(`${externalSignerJson(request)}\n`);
   });
 }
 
@@ -57,10 +62,20 @@ export class ExternalCommandStarknetSigner {
   ) {}
 
   async signTransaction(calls: unknown, details: unknown): Promise<Felt[]> {
+    const det = details as Record<string, any>;
+    const compiledCalldata = transaction.getExecuteCalldata(calls as any[], det.cairoVersion);
+    const transactionHash = hash.calculateInvokeTransactionHash({
+      ...det,
+      senderAddress: det.walletAddress,
+      compiledCalldata,
+      version: det.version,
+      nonceDataAvailabilityMode: stark.intDAM(det.nonceDataAvailabilityMode),
+      feeDataAvailabilityMode: stark.intDAM(det.feeDataAvailabilityMode)
+    } as any);
     const result = await runExternalSigner(this.input.signer, {
       scheme: this.scheme,
       action: "sign-transaction",
-      payload: { calls, details }
+      payload: { hash: transactionHash, calls, details }
     });
     if (!result.signature) {
       throw new Error("external signer response must include a signature array.");
@@ -69,10 +84,20 @@ export class ExternalCommandStarknetSigner {
   }
 
   async signDeployAccountTransaction(details: unknown): Promise<Felt[]> {
+    const det = details as Record<string, any>;
+    const compiledConstructorCalldata = CallData.compile(det.constructorCalldata);
+    const transactionHash = hash.calculateDeployAccountTransactionHash({
+      ...det,
+      salt: det.addressSalt,
+      compiledConstructorCalldata,
+      version: det.version,
+      nonceDataAvailabilityMode: stark.intDAM(det.nonceDataAvailabilityMode),
+      feeDataAvailabilityMode: stark.intDAM(det.feeDataAvailabilityMode)
+    } as any);
     const result = await runExternalSigner(this.input.signer, {
       scheme: this.scheme,
       action: "sign-deploy-account",
-      payload: { details }
+      payload: { hash: transactionHash, details }
     });
     if (!result.signature) {
       throw new Error("external signer response must include a signature array.");
@@ -88,4 +113,3 @@ export class ExternalCommandStarknetSigner {
     throw new Error("typed-data signing is not supported by this CLI signer.");
   }
 }
-

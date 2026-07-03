@@ -64,7 +64,12 @@ Inspect constructor calldata before deploying an account:
 ```bash
 pq-accounts constructor-calldata \
   --scheme falcon-512 \
-  --signer-command ./sign-falcon
+  --signer-command python3 \
+  --signer-arg ../signers/falcon-python/falcon_signer.py \
+  --signer-arg --falcon-py \
+  --signer-arg /path/to/falcon.py \
+  --signer-arg --key \
+  --signer-arg ../signers/falcon-python/falcon-key.json
 ```
 
 Send an invoke transaction from an account. The CLI uses Starknet.js `Account.execute`,
@@ -97,12 +102,26 @@ pq-accounts deploy-account \
 ## External Signer Protocol
 
 Use `--signer-command` for a verifier whose signature algorithm is not implemented in
-this TypeScript package yet:
+this TypeScript package. Falcon accounts can use the signer in
+`../signers/falcon-python`:
+
+```bash
+python3 ../signers/falcon-python/falcon_signer.py keygen \
+  --falcon-py /path/to/falcon.py \
+  --key ../signers/falcon-python/falcon-key.json
+```
+
+Then pass it to the CLI:
 
 ```bash
 pq-accounts sign-hash \
   --scheme falcon-512 \
-  --signer-command ./sign-falcon \
+  --signer-command python3 \
+  --signer-arg ../signers/falcon-python/falcon_signer.py \
+  --signer-arg --falcon-py \
+  --signer-arg /path/to/falcon.py \
+  --signer-arg --key \
+  --signer-arg ../signers/falcon-python/falcon-key.json \
   --hash 0xabc
 ```
 
@@ -128,9 +147,9 @@ The signer must print JSON on stdout:
 
 For public-key derivation, the `action` is `public-key` and the signer should return a
 `publicKey` array. For transaction submission, the `action` is `sign-transaction` or
-`sign-deploy-account`. The payload includes the Starknet.js calls and signer details, so
-the external signer can compute the same hash that the account will read from
-`tx_info.transaction_hash`.
+`sign-deploy-account`. The payload includes `hash`, computed by Starknet.js from the
+calls and signer details, so the external signer only has to sign the felt that the
+account will read from `tx_info.transaction_hash`.
 
 The package depends on Starknet.js v10 and submits v3 account transactions. Fee selection
 uses Starknet.js defaults unless the command grows explicit v3 resource-bound flags.
