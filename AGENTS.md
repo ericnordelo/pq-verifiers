@@ -94,9 +94,13 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
   `efficiency_baseline.json` and `results/`; READMEs may quote the current snapshot.
   Comments may state structural facts ("at most two reduction passes per transform"),
   not gas figures.
-- **Attribution is not comparison.** Ported files keep their `SPDX-FileCopyrightText`
-  and ported-from headers — that is a license obligation. State provenance; describe
-  behavior in present terms.
+- **No per-file license headers on original code.** The repository `LICENSE` covers
+  everything; do not add `SPDX-FileCopyrightText` / `SPDX-License-Identifier` blocks to
+  files authored here. The one exception is ported third-party code, which keeps the
+  upstream copyright header it arrived with — that is a license obligation, not a
+  style choice.
+- **Attribution is not comparison.** Ported files keep their upstream copyright and
+  ported-from headers. State provenance; describe behavior in present terms.
 - Design rationale is welcome when it explains the current design on its own terms
   (e.g. why lazy reduction is sound, why an offset is a multiple of q) — the test is
   whether the comment still reads true to someone who has never seen any other version.

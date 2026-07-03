@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 OpenZeppelin
-//
-// SPDX-License-Identifier: MIT
-
 //! Falcon parameter set for the NTT engine: q = 12289, negacyclic (x^n + 1),
 //! tprest/falcon.py evaluation order — interoperable with the s2morrow convention and
 //! the falcon.py reference signer.

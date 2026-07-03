@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 OpenZeppelin
-//
-// SPDX-License-Identifier: MIT
-
 //! Iterative NTT engine with felt252 lazy reduction.
 //!
 //! # Algorithm

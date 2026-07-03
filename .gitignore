@@ -2,3 +2,4 @@ target/
 .snfoundry_cache/
 snfoundry_trace/
 *.pb.gz
+__pycache__/
