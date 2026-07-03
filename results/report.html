@@ -36,26 +36,40 @@ code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 13p
 </style>
 <div class="wrap">
 <h1>Post-quantum signature verifiers &mdash; Starknet benchmark</h1>
-<p class="sub">Generated 2026-06-24 13:48 &middot; scarb 2.18.0, snforge 0.59.0 &middot; cost of verifying one signature inside an account validation.</p>
+<p class="sub">Generated 2026-07-03 02:05 &middot; scarb 2.18.0, snforge 0.59.0 &middot; cost of verifying one signature inside an account validation.</p>
 <div class="cards">
-<div class="card"><div class="l">Measured</div><div class="v">1</div></div>
-<div class="card"><div class="l">Pending</div><div class="v">3</div></div>
+<div class="card"><div class="l">Measured</div><div class="v">2</div></div>
+<div class="card"><div class="l">Pending</div><div class="v">2</div></div>
 <div class="card"><div class="l">Validate gas cap</div><div class="v">100M</div></div>
 <div class="card"><div class="l">Validate step cap</div><div class="v">1000k</div></div>
 </div>
 <h2>Measured verifiers</h2>
 <table id="t"><thead><tr><th onclick="sortTable(t,0,false)">Scheme</th><th onclick="sortTable(t,1,false)">Family</th><th onclick="sortTable(t,2,true)">L2 gas</th><th onclick="sortTable(t,3,true)">% gas cap</th><th onclick="sortTable(t,4,true)">Steps</th><th onclick="sortTable(t,5,true)">% step cap</th><th onclick="sortTable(t,6,true)">Sig (felts)</th><th onclick="sortTable(t,7,true)">PubKey (felts)</th><th onclick="sortTable(t,8,true)">Calldata L2 gas</th><th onclick="sortTable(t,9,false)">Fits caps</th></tr></thead><tbody>
 <tr><td data-v="ECDSA-STARK (baseline)">ECDSA-STARK (baseline)</td><td data-v="classical EC">classical EC</td><td class="mono" data-v="30855">30,855</td><td class="mono" data-v="0.0309">0.0309%</td><td class="mono" data-v="152">152</td><td class="mono" data-v="0.0152">0.0152%</td><td class="mono" data-v="2">2</td><td class="mono" data-v="1">1</td><td class="mono" data-v="15360">15,360</td><td data-v="True"><span class="badge ok">yes</span></td></tr>
+<tr><td data-v="Falcon-512 (FN-DSA)">Falcon-512 (FN-DSA)</td><td data-v="lattice (NTRU)">lattice (NTRU)</td><td class="mono" data-v="125791330">125,791,330</td><td class="mono" data-v="125.7913">125.7913%</td><td class="mono" data-v="1094283">1,094,283</td><td class="mono" data-v="109.4283">109.4283%</td><td class="mono" data-v="58">58</td><td class="mono" data-v="29">29</td><td class="mono" data-v="445440">445,440</td><td data-v="False"><span class="badge no">no</span></td></tr>
 </tbody></table>
 <h2>Verification L2 gas (relative)</h2>
-<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:100.0%;background:#185FA5"></div></div><div class="barval mono">30,855  (0.0309% cap)</div></div>
+<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:1.0%;background:#185FA5"></div></div><div class="barval mono">30,855  (0.0309% cap)</div></div>
+<div class="barrow"><div class="barlabel">Falcon-512 (FN-DSA)</div><div class="track"><div class="fill" style="width:100.0%;background:#185FA5"></div></div><div class="barval mono">125,791,330  (125.7913% cap)</div></div>
 <h2>Verification steps (relative)</h2>
-<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:100.0%;background:#0F6E56"></div></div><div class="barval mono">152  (0.0152% cap)</div></div>
+<div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:1.0%;background:#0F6E56"></div></div><div class="barval mono">152  (0.0152% cap)</div></div>
+<div class="barrow"><div class="barlabel">Falcon-512 (FN-DSA)</div><div class="track"><div class="fill" style="width:100.0%;background:#0F6E56"></div></div><div class="barval mono">1,094,283  (109.4283% cap)</div></div>
 <h2>Where the cost goes</h2>
 <p class="note"><b>ECDSA-STARK (baseline)</b> &mdash; builtins: ec_op: 3, range_check: 7</p>
 <details><summary>step attribution (top functions inside verify)</summary><table><thead><tr><th>Function</th><th>Steps (flat)</th><th>% of test</th></tr></thead><tbody>
 <tr><td style="text-align:left" class="mono">core::ecdsa::check_ecdsa_signature</td><td class="mono">127</td><td class="mono">37.46%</td></tr>
 <tr><td style="text-align:left" class="mono">pqbench_ecdsa_stark_integrationtest::bench::bench_verify_ecdsa_stark</td><td class="mono">109</td><td class="mono">32.15%</td></tr>
+</tbody></table></details>
+<p class="note"><b>Falcon-512 (FN-DSA)</b> &mdash; builtins: range_check: 210590</p>
+<details><summary>step attribution (top functions inside verify)</summary><table><thead><tr><th>Function</th><th>Steps (flat)</th><th>% of test</th></tr></thead><tbody>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::ntt::merge_ntt[301-607]</td><td class="mono">353,244</td><td class="mono">32.28%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::ntt::split_ntt[269-614]</td><td class="mono">193,006</td><td class="mono">17.63%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::packing::unpack_512[490-651]</td><td class="mono">189,871</td><td class="mono">17.35%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::ntt::split[180-323]</td><td class="mono">102,368</td><td class="mono">9.35%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::ntt::ntt</td><td class="mono">77,678</td><td class="mono">7.1%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::ntt::merge[168-305]</td><td class="mono">47,088</td><td class="mono">4.3%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::ntt::intt</td><td class="mono">43,202</td><td class="mono">3.95%</td></tr>
+<tr><td style="text-align:left" class="mono">pqbench_falcon_512::Falcon512Verifier::verify[746-865]</td><td class="mono">35,000</td><td class="mono">3.2%</td></tr>
 </tbody></table></details>
 <h2>Realistic cost in __validate__ (deploy + call, baseline-subtracted)</h2>
 <p class="note">Adds call dispatch, tx-info read (signature deserialization) and storage read on top of bare verification &mdash; the cost an account actually pays during validation.</p>
@@ -64,16 +78,14 @@ code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 13p
 </tbody></table>
 <h2>On-chain footprint (signature + public key, felts)</h2>
 <div class="barrow"><div class="barlabel">ECDSA-STARK (baseline)</div><div class="track"><div class="fill" style="width:1.0%;background:#D85A30"></div></div><div class="barval mono">3 felts (2+1)</div></div>
-<div class="barrow"><div class="barlabel">Falcon-512 (FN-DSA)</div><div class="track"><div class="fill" style="width:9.09%;background:#D85A30"></div></div><div class="barval mono">51 felts (22+29)</div></div>
+<div class="barrow"><div class="barlabel">Falcon-512 (FN-DSA)</div><div class="track"><div class="fill" style="width:15.51%;background:#D85A30"></div></div><div class="barval mono">87 felts (58+29)</div></div>
 <div class="barrow"><div class="barlabel">ML-DSA-44 (Dilithium)</div><div class="track"><div class="fill" style="width:21.75%;background:#D85A30"></div></div><div class="barval mono">122 felts (79+43)</div></div>
 <div class="barrow"><div class="barlabel">Poseidon-WOTS+ (hash-based)</div><div class="track"><div class="fill" style="width:100.0%;background:#D85A30"></div></div><div class="barval mono">561 felts (560+1)</div></div>
 <h2>Pending implementation</h2>
 <table><thead><tr><th>Scheme</th><th>Family</th><th>NIST cat</th><th>Standardized</th><th>On-chain hash</th><th>Status</th></tr></thead><tbody>
-<tr><td>Falcon-512 (FN-DSA)</td><td>lattice (NTRU)</td><td class="mono">1</td><td>draft (FIPS 206)</td><td>SHAKE-256 hash-to-point (off-chain)</td><td><span class="badge pending">stub</span></td></tr>
 <tr><td>ML-DSA-44 (Dilithium)</td><td>lattice (module)</td><td class="mono">2</td><td>yes (FIPS 204)</td><td>SHAKE-256 (on-chain)</td><td><span class="badge pending">stub</span></td></tr>
 <tr><td>Poseidon-WOTS+ (hash-based)</td><td>hash-based (non-standard)</td><td class="mono">TBD</td><td>no (custom)</td><td>Poseidon (on-chain)</td><td><span class="badge pending">stub</span></td></tr>
 </tbody></table>
-<p class="note"><b>Falcon-512 (FN-DSA)</b> &mdash; Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1.</p>
 <p class="note"><b>ML-DSA-44 (Dilithium)</b> &mdash; Finalized; robust signing. Expected SHAKE-dominated cost in Cairo.</p>
 <p class="note"><b>Poseidon-WOTS+ (hash-based)</b> &mdash; Cheapest Cairo compute; needs research-grade security analysis. Large signature.</p>
 <footer>

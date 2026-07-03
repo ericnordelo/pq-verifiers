@@ -1,6 +1,6 @@
 # Falcon-512 verifier — port plan
 
-Status: **stub**. This file is the concrete plan to replace the stub in `src/lib.cairo`
+Status: **implemented** (direct-NTT variant). Kept as the record of the port.
 with a real Falcon-512 verifier, derived from reading the reference implementation.
 
 ## Reference

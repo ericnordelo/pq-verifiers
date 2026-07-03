@@ -30,10 +30,10 @@
       "standardized": "draft (FIPS 206)",
       "on_chain_hash": "SHAKE-256 hash-to-point (off-chain)",
       "offchain_prep": "hash-to-point computed off-chain",
-      "sig_felts": 22,
+      "sig_felts": 58,
       "pubkey_felts": 29,
-      "implemented": false,
-      "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1."
+      "implemented": true,
+      "notes": "Direct-NTT (looped, no hint), ported from s2morrow (MIT). Real fn-dsa fixture verified + tampered-rejected. Measured ~125.8M L2 gas \u2014 OVER the 100M validate budget; a production account needs the cheaper unrolled/hint NTT (tooling- and audit-gated). Smallest sig/key of the PQ candidates; Cat-1."
     },
     {
       "key": "ml_dsa_44",
