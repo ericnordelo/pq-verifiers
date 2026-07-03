@@ -3,7 +3,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/ericnordelo/pq-verifiers/efficiency.yml?branch=main&label=CI)](https://github.com/ericnordelo/pq-verifiers/actions/workflows/efficiency.yml)
 
 _Comparing candidate post quantum signature verifiers for a Starknet account by their
-verification cost.
+verification cost._
 
 ## Why
 
