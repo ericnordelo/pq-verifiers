@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-06-24 13:48",
+    "generated": "2026-07-03 02:05",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -114,11 +114,149 @@
       "standardized": "draft (FIPS 206)",
       "on_chain_hash": "SHAKE-256 hash-to-point (off-chain)",
       "offchain_prep": "hash-to-point computed off-chain",
-      "sig_felts": 22,
+      "sig_felts": 58,
       "pubkey_felts": 29,
-      "implemented": false,
-      "notes": "Smallest sig/key; demonstrated on Starknet (s2morrow). Fragile signing; Cat-1.",
-      "measured": false
+      "implemented": true,
+      "notes": "Direct-NTT (looped, no hint), ported from s2morrow (MIT). Real fn-dsa fixture verified + tampered-rejected. Measured ~125.8M L2 gas \u2014 OVER the 100M validate budget; a production account needs the cheaper unrolled/hint NTT (tooling- and audit-gated). Smallest sig/key of the PQ candidates; Cat-1.",
+      "measured": true,
+      "verify_l2_gas": 125791330,
+      "verify_steps": 1094283,
+      "verify_builtins": {
+        "range_check": 210590
+      },
+      "calldata_l2_gas": 445440,
+      "pct_of_gas_cap": 125.7913,
+      "pct_of_step_cap": 109.4283,
+      "fits_gas_cap": false,
+      "fits_step_cap": false,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::ntt::merge_ntt[301-607]",
+          "flat_steps": 353244,
+          "flat_pct": 32.28,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::split_ntt[269-614]",
+          "flat_steps": 193006,
+          "flat_pct": 17.63,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[490-651]",
+          "flat_steps": 189871,
+          "flat_pct": 17.35,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::split[180-323]",
+          "flat_steps": 102368,
+          "flat_pct": 9.35,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::ntt",
+          "flat_steps": 77678,
+          "flat_pct": 7.1,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::merge[168-305]",
+          "flat_steps": 47088,
+          "flat_pct": 4.3,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::intt",
+          "flat_steps": 43202,
+          "flat_pct": 3.95,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512Verifier::verify[746-865]",
+          "flat_steps": 35000,
+          "flat_pct": 3.2,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::sub_zq[203-351]",
+          "flat_steps": 18448,
+          "flat_pct": 1.69,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt::mul_ntt[229-377]",
+          "flat_steps": 17936,
+          "flat_pct": 1.64,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots",
+          "flat_steps": 7108,
+          "flat_pct": 0.65,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[237-724]",
+          "flat_steps": 5397,
+          "flat_pct": 0.49,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::ntt_constants::get_even_roots_inv",
+          "flat_steps": 3554,
+          "flat_pct": 0.32,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[237-724]{NotSpecialized, 0, array![], }",
+          "flat_steps": 132,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512Verifier::verify",
+          "flat_steps": 125,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::signature",
+          "flat_steps": 120,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512",
+          "flat_steps": 85,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512Verifier::verify[746-865]{0, NotSpecialized, 0, NotSpecialized, }",
+          "flat_steps": 52,
+          "flat_pct": 0.0,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 31,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench::bench_verify_falcon_512__snforge_internal_test_generated",
+          "flat_steps": 21,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
+          "flat_steps": 1,
+          "flat_pct": 0.0,
+          "harness": true
+        }
+      ]
     },
     {
       "key": "ml_dsa_44",
