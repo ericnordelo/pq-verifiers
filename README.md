@@ -31,7 +31,7 @@ Current efficiency of every measured entry, per crate (the values pinned in
 | Crate | Measurement | L2 gas | Steps | % of gas cap |
 |---|---|--:|--:|--:|
 | [`ecdsa_stark`](crates/ecdsa_stark) | verify (classical control) | 30,855 | 152 | 0.03% |
-| [`bench_targets`](crates/bench_targets) | ECDSA inside `__validate__` (account mock) | 160,795 | 1,437 | 0.16% |
+| [`bench_targets`](crates/bench_targets) | ECDSA-STARK account, inside `__validate__` | 160,795 | 1,437 | 0.16% |
 | [`falcon_512`](crates/falcon_512) | verify, hint variant | 35,643,340 | 322,958 | 35.6% |
 | [`falcon_512`](crates/falcon_512) | verify, direct variant | 37,190,480 | 340,697 | 37.2% |
 | [`ntt`](crates/ntt) | forward 512-point transform | 8,895,740 | 81,826 | 8.9% |
@@ -108,7 +108,7 @@ crates/
   ml_dsa_44/
   poseidon_wots/
   ntt/               # shared lazy-reduction NTT engine (used by the lattice schemes)
-  bench_targets/     # account mock contracts for the validate scenario
+  bench_targets/     # one account contract per verifier, for the validate scenario
 scripts/             # run_bench.py, profile.py, gen_report.py, check_efficiency.py
 schemes.json         # the scheme registry
 efficiency_baseline.json  # the efficiency ratchet (CI-enforced)

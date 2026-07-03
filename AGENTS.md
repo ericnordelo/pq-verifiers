@@ -21,7 +21,7 @@ crates/
   ml_dsa_44/            # verifier crate: stub
   poseidon_wots/        # verifier crate: stub
   ntt/                  # component crate: shared lazy-reduction NTT engine
-  bench_targets/        # account mock contracts for the in-__validate__ scenario
+  bench_targets/        # account harness: one account contract per verifier (validate scenario)
 scripts/
   run_bench.py          # measures every schemes.json pair -> results/results.json
   profile.py            # cairo-profiler step attribution -> augments results.json
@@ -37,12 +37,15 @@ results/                # generated snapshot (never hand-edited)
 .tool-versions          # pinned toolchain (asdf); Makefile targets drive everything
 ```
 
-Two crate kinds. **Verifier crates** (one per scheme) implement `PqSignatureVerifier`
+Three crate kinds. **Verifier crates** (one per scheme) implement `PqSignatureVerifier`
 and are registered in `schemes.json`. **Component crates** (currently `crates/ntt`)
 hold shared building blocks consumed by verifier crates; they are not in `schemes.json`
 but carry their own benchmark pairs and ratchet entries, and their correctness argument
 must be executable (reference-oracle tests in Cairo plus a Python model in `scripts/`),
-not prose.
+not prose. **The account harness** (`crates/bench_targets`) grows with the verifiers
+rather than being one thing: it holds one deployable account contract per verifier (one
+module each, all exposing the crate-root `IValidateBench` interface), and its
+measurements are the schemes' in-`__validate__` costs.
 
 ## What must be updated together
 
@@ -131,8 +134,10 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
    impl), and a short `README.md` (format below).
 2. Add `crates/<key>/tests/bench.cairo` with the paired `bench_verify_*` /
    `bench_baseline_*`.
-3. (For the realistic scenario) add an account mock in `crates/bench_targets` and paired
-   `bench_validate_*` / `bench_validate_base_*`.
+3. (For the realistic scenario) add the scheme's account contract to
+   `crates/bench_targets` — a new module implementing `IValidateBench`, mirroring the
+   existing per-verifier modules — with paired `bench_validate_*` /
+   `bench_validate_base_*` tests.
 4. Add `crates/<key>` to `members` in `Scarb.toml`.
 5. Add the `schemes.json` entry (`"implemented": true` only once validated by a real
    fixture) and the `efficiency_baseline.json` entries (seed with `make ratchet`).
@@ -151,7 +156,10 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
 
 Verifier crates open with `**Scheme:** <name> — <family>, <standardization status>.`;
 component crates with `**Component:** <what it provides>.`; both carry a
-`**Status:** <measured | stub (pending implementation)>.` line.
+`**Status:** <measured | stub (pending implementation)>.` line. The account harness
+(`bench_targets`) additionally lists its per-verifier module layout, and its efficiency
+table has **one row per verifier account** — it grows with every scheme that gains a
+validate scenario.
 
 **The main README** must:
 
