@@ -107,6 +107,9 @@ def extract_name(filename):
 def class_sizes():
     """Build release artifacts and measure contract-class sizes.
 
+    Only the account-harness classes (`pqbench_targets_*`) are measured — they are the
+    contracts registered in schemes.json. Other workspace packages (e.g. `pq_accounts`)
+    build contracts with the same short names, so files are filtered by package prefix.
     CASM bytecode is measured in felts (`*.compiled_contract_class.json`); the Sierra class
     is measured in bytes (`*.contract_class.json`). Returns {contract_name: {felts, bytes}}.
     """
@@ -116,6 +119,8 @@ def class_sizes():
         return {}
     out = {}
     for fname in os.listdir(target):
+        if not fname.startswith("pqbench_targets_"):
+            continue
         path = os.path.join(target, fname)
         if fname.endswith(".compiled_contract_class.json"):
             try:

@@ -1,23 +1,24 @@
-//! Falcon-512 hint account contract.
+//! Falcon-512 SHAKE-256 account contract.
 //!
-//! This account stores the packed 29-felt NTT-domain public key used by the Falcon-512
-//! verifier and expects the hint signature layout: packed `s1`, two salt felts, and the
-//! packed multiplication hint. The message point is derived with the BLAKE2s
-//! hash-to-point, so the off-chain signer must use the matching construction.
+//! This account stores the packed 29-felt NTT-domain public key and validates the same
+//! 60-felt hint signature layout as the hint account, deriving the message point with the
+//! standard SHAKE-256 hash-to-point of the Falcon specification. Signatures are therefore
+//! interoperable with any standards-compliant Falcon signer (e.g. falcon.py) — no custom
+//! hash construction on the signing side.
 
 #[starknet::contract(account)]
-pub mod Falcon512Account {
-    use pqbench_falcon_512::Falcon512Verifier;
+pub mod Falcon512ShakeAccount {
+    use pqbench_falcon_512::Falcon512ShakeVerifier;
     use crate::utils::account::PqAccountComponent;
 
     component!(path: PqAccountComponent, storage: account, event: AccountEvent);
 
     #[abi(embed_v0)]
     impl AccountImpl =
-        PqAccountComponent::AccountImpl<ContractState, Falcon512Verifier>;
+        PqAccountComponent::AccountImpl<ContractState, Falcon512ShakeVerifier>;
     #[abi(embed_v0)]
     impl DeployableImpl =
-        PqAccountComponent::DeployableImpl<ContractState, Falcon512Verifier>;
+        PqAccountComponent::DeployableImpl<ContractState, Falcon512ShakeVerifier>;
     #[abi(embed_v0)]
     impl PublicKeyImpl = PqAccountComponent::PublicKeyImpl<ContractState>;
 

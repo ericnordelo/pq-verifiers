@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Falcon-512 signer for the pq-accounts CLI external-signer protocol."""
+"""Falcon-512 signer for the pq-accounts CLI external-signer protocol.
+
+One NTRU keypair serves every Falcon account variant: the variants differ only in the
+hash-to-point that derives the message point, which this signer selects from the scheme
+key in each request — BLAKE2s for `falcon-512` / `falcon-512-direct`, the standard
+SHAKE-256 of the Falcon specification for `falcon-512-shake`, and the native-Poseidon
+squeeze for `falcon-512-poseidon`. Each construction mirrors its on-chain counterpart in
+`crates/falcon_512` exactly.
+"""
 
 from __future__ import annotations
 
@@ -12,14 +20,54 @@ import pickle
 import struct
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 Q = 12289
 SIG_BOUND_512 = 34034726
 
+# Starknet Poseidon (hades_permutation over the STARK field), vendored to match
+# core::poseidon exactly: round constants are sha256("Hades"+idx), the MDS is the small
+# matrix, and the schedule is 4 full + 83 partial + 4 full rounds. Verified against the
+# corelib known-answer vector before every use, so no cairo-lang dependency is needed.
+POSEIDON_PRIME = 2**251 + 17 * 2**192 + 1
+POSEIDON_MDS = ((3, 1, 1), (1, -1, 1), (1, 1, -2))
+POSEIDON_R_F, POSEIDON_R_P = 8, 83
+POSEIDON_WORDS_PER_FELT = 15  # must match hash_to_point.cairo
+POSEIDON_KAT = 0xFA8C9B6742B6176139365833D001E30E932A9BF7456D009B1B174F36D558C5
+
+
+def _hades_ark(idx: int) -> int:
+    return int(hashlib.sha256(f"Hades{idx}".encode()).hexdigest(), 16) % POSEIDON_PRIME
+
+
+def poseidon_perm(s0: int, s1: int, s2: int) -> tuple:
+    """Starknet hades_permutation on 3 field elements; matches core::poseidon."""
+    st = [s0 % POSEIDON_PRIME, s1 % POSEIDON_PRIME, s2 % POSEIDON_PRIME]
+
+    def rnd(st: list, ridx: int, full: bool) -> list:
+        st = [(st[j] + _hades_ark(3 * ridx + j)) % POSEIDON_PRIME for j in range(3)]
+        if full:
+            st = [pow(x, 3, POSEIDON_PRIME) for x in st]
+        else:
+            st[2] = pow(st[2], 3, POSEIDON_PRIME)
+        return [sum(POSEIDON_MDS[i][k] * st[k] for k in range(3)) % POSEIDON_PRIME
+                for i in range(3)]
+
+    ridx = 0
+    for _ in range(POSEIDON_R_F // 2):
+        st = rnd(st, ridx, True)
+        ridx += 1
+    for _ in range(POSEIDON_R_P):
+        st = rnd(st, ridx, False)
+        ridx += 1
+    for _ in range(POSEIDON_R_F // 2):
+        st = rnd(st, ridx, True)
+        ridx += 1
+    return st[0], st[1], st[2]
+
 
 def h2p_blake2s(message_hash: int, salt: bytes, n: int = 512) -> list[int]:
-    """Derive the verifier message point with the Cairo BLAKE2s XOF construction."""
+    """Derive the message point with the Cairo BLAKE2s XOF construction."""
     if len(salt) != 40:
         raise ValueError("Falcon salt must be exactly 40 bytes")
     prefix = salt + message_hash.to_bytes(32, "little")
@@ -32,6 +80,58 @@ def h2p_blake2s(message_hash: int, salt: bytes, n: int = 512) -> list[int]:
                 out.append(cand % Q)
         ctr += 1
     return out
+
+
+def h2p_shake256(message_hash: int, salt: bytes, n: int = 512) -> list[int]:
+    """Derive the message point with the standard Falcon SHAKE-256 hash-to-point:
+    absorb salt || message, consume big-endian 16-bit words, accept `word % Q` while
+    `word < 5Q`. Interoperable with falcon.py's own HashToPoint."""
+    if len(salt) != 40:
+        raise ValueError("Falcon salt must be exactly 40 bytes")
+    shake = hashlib.shake_256(salt + message_hash.to_bytes(32, "little"))
+    stream = shake.digest(4 * n)  # ample margin over the ~2n bytes expected
+    out: list[int] = []
+    i = 0
+    while len(out) < n:
+        word = (stream[i] << 8) | stream[i + 1]
+        i += 2
+        if word < 5 * Q:
+            out.append(word % Q)
+    return out
+
+
+def h2p_poseidon(message_hash: int, salt: bytes, n: int = 512) -> list[int]:
+    """Derive the message point with the native-Poseidon squeeze: absorb
+    (salt_a, salt_b, message_hash), then read 15 low 16-bit words per rate felt,
+    permuting between blocks. Matches `hash_to_point_poseidon_512`."""
+    if poseidon_perm(1, 2, 3)[0] != POSEIDON_KAT:
+        raise RuntimeError("vendored poseidon_perm does not match core::poseidon")
+    salt_a = int.from_bytes(salt[:20], "little")
+    salt_b = int.from_bytes(salt[20:], "little")
+    s0, s1, s2 = poseidon_perm(salt_a, salt_b, message_hash)
+    out: list[int] = []
+    while len(out) < n:
+        for felt in (s0, s1):
+            for j in range(POSEIDON_WORDS_PER_FELT):
+                if len(out) < n:
+                    word = (felt >> (16 * j)) & 0xFFFF
+                    if word < 5 * Q:
+                        out.append(word % Q)
+        if len(out) < n:
+            s0, s1, s2 = poseidon_perm(s0, s1, s2)
+    return out
+
+
+# Hash-to-point construction per CLI scheme key; direct reuses the hint construction.
+H2P_BY_SCHEME: dict[str, Callable[[int, bytes], list[int]]] = {
+    "falcon-512": h2p_blake2s,
+    "falcon-512-direct": h2p_blake2s,
+    "falcon-512-shake": h2p_shake256,
+    "falcon-512-poseidon": h2p_poseidon,
+}
+
+# Schemes whose signature is the 31-felt `s1 || salt` prefix of the hint layout.
+DIRECT_SCHEMES = {"falcon-512-direct"}
 
 
 def pack_512(vals: list[int]) -> list[int]:
@@ -93,7 +193,8 @@ def decode_private_key(data: dict[str, Any]) -> tuple[Any, list[int], list[int]]
 
 
 def keygen(args: argparse.Namespace) -> None:
-    """Generate a Falcon key file for the external signer."""
+    """Generate a Falcon key file for the external signer. The key is hash-to-point
+    agnostic: one file serves every Falcon account variant."""
     fpy, div_zq, _mul_zq, ntt = load_falcon_modules(args.falcon_py)
     scheme = fpy.Falcon(512)
     if scheme.param.sig_bound != SIG_BOUND_512:
@@ -108,7 +209,7 @@ def keygen(args: argparse.Namespace) -> None:
         args.key,
         {
             "format": "pq-accounts-falcon-python-v1",
-            "scheme": "falcon-512-blake2s",
+            "scheme": "falcon-512",
             "public_key": as_hex(public_key),
             "h": h,
             "secret_pickle_b64": base64.b64encode(pickle.dumps(sk)).decode("ascii"),
@@ -117,25 +218,35 @@ def keygen(args: argparse.Namespace) -> None:
     print(f"wrote {args.key}", file=sys.stderr)
 
 
-def sign_hash(message_hash: int, key_data: dict[str, Any], mul_zq: Any) -> list[int]:
-    """Sign a Starknet transaction hash and return the 60-felt hint signature."""
+def sign_hash(
+    message_hash: int,
+    key_data: dict[str, Any],
+    mul_zq: Any,
+    h2p: Callable[[int, bytes], list[int]],
+) -> list[int]:
+    """Sign a Starknet transaction hash and return the 60-felt hint signature, deriving
+    the message point with the given hash-to-point construction."""
     sk, h, _public_key = decode_private_key(key_data)
     _f, _g, _F, _G, B0_fft, T_fft = sk
-    scheme_bound = SIG_BOUND_512
     salt = os.urandom(40)
-    point = h2p_blake2s(message_hash, salt)
+    point = h2p(message_hash, salt)
 
     import falcon as fpy  # type: ignore
 
     scheme = fpy.Falcon(512)
+    if scheme.param.sig_bound != SIG_BOUND_512:
+        raise RuntimeError("unexpected Falcon-512 signature bound")
     while True:
         s = scheme.__sample_preimage__(B0_fft, T_fft, point)
         norm = sum(c * c for c in s[0]) + sum(c * c for c in s[1])
-        if norm <= scheme_bound:
+        if norm <= SIG_BOUND_512:
             break
 
     s1 = [c % Q for c in s[1]]
     mul_hint = mul_zq(s1, h)
+    # Re-check the exact on-chain acceptance condition before returning material.
+    if any((s[0][i] + mul_hint[i]) % Q != point[i] for i in range(512)):
+        raise RuntimeError("signer/verifier equation mismatch")
     onchain_norm = sum(
         centered((point[i] - mul_hint[i]) % Q) ** 2 + centered(s1[i]) ** 2
         for i in range(512)
@@ -170,8 +281,14 @@ def protocol(args: argparse.Namespace) -> None:
         return
 
     if action in {"sign-hash", "sign-transaction", "sign-deploy-account"}:
-        signature = sign_hash(request_hash(request), key_data, mul_zq)
-        if scheme == "falcon-512-direct":
+        h2p = H2P_BY_SCHEME.get(str(scheme))
+        if h2p is None:
+            raise ValueError(
+                f"unsupported scheme: {scheme}. "
+                f"Supported: {', '.join(sorted(H2P_BY_SCHEME))}"
+            )
+        signature = sign_hash(request_hash(request), key_data, mul_zq, h2p)
+        if scheme in DIRECT_SCHEMES:
             signature = signature[:31]
         print(json.dumps({"signature": as_hex(signature)}))
         return

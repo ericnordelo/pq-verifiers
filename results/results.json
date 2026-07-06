@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-07-06 19:57",
+    "generated": "2026-07-06 21:01",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -62,7 +62,7 @@
       "validate_pct_of_gas_cap": 0.1608,
       "validate_pct_of_step_cap": 0.1437,
       "validate_fits": true,
-      "class_felts": 2178,
+      "class_felts": 784,
       "class_bytes": 20555,
       "verify_profile": [
         {
@@ -138,7 +138,7 @@
       "validate_pct_of_step_cap": 25.4065,
       "validate_fits": true,
       "class_felts": 10571,
-      "class_bytes": 308687,
+      "class_bytes": 268717,
       "verify_profile": [
         {
           "function": "pqbench_falcon_512::falcon::verify_512_with_hint[1402-3228]",
@@ -326,7 +326,7 @@
       "validate_pct_of_gas_cap": 32.6376,
       "validate_pct_of_step_cap": 29.8618,
       "validate_fits": true,
-      "class_felts": 13357,
+      "class_felts": 11768,
       "class_bytes": 299829,
       "verify_profile": [
         {
@@ -693,8 +693,8 @@
       "verify_l2_gas": 26488669,
       "verify_steps": 237462,
       "verify_builtins": {
-        "poseidon": 19,
-        "range_check": 34407
+        "range_check": 34407,
+        "poseidon": 19
       },
       "calldata_l2_gas": 455680,
       "pct_of_gas_cap": 26.4887,

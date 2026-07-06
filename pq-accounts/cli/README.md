@@ -12,6 +12,10 @@ The built-in account descriptors are:
 - `falcon-512`: `Falcon512Account`, with 29 public-key felts and 60 signature felts.
 - `falcon-512-direct`: `Falcon512DirectAccount`, with 29 public-key felts and 31
   signature felts.
+- `falcon-512-shake`: `Falcon512ShakeAccount`, with 29 public-key felts and 60 signature
+  felts (standard SHAKE-256 hash-to-point).
+- `falcon-512-poseidon`: `Falcon512PoseidonAccount`, with 29 public-key felts and 60
+  signature felts (native-Poseidon hash-to-point).
 
 ECDSA signing is implemented with Starknet.js. Falcon signing is delegated to an external
 signer process so the CLI can interact with the accounts without reimplementing the

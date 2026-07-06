@@ -22,17 +22,47 @@ const falcon512DirectScheme = createExternalScheme({
   description: "Uses the Falcon-512 direct account. Signing is delegated to an external signer that returns the 31-felt direct signature layout."
 });
 
+const falcon512ShakeScheme = createExternalScheme({
+  key: "falcon-512-shake",
+  label: "Falcon-512 SHAKE-256",
+  accountContract: "Falcon512ShakeAccount",
+  signatureFelts: 60,
+  publicKeyFelts: 29,
+  arrayPublicKey: true,
+  description: "Uses the Falcon-512 SHAKE-256 account (standard FIPS hash-to-point). Signing is delegated to an external signer that returns the 60-felt hint signature layout."
+});
+
+const falcon512PoseidonScheme = createExternalScheme({
+  key: "falcon-512-poseidon",
+  label: "Falcon-512 Poseidon",
+  accountContract: "Falcon512PoseidonAccount",
+  signatureFelts: 60,
+  publicKeyFelts: 29,
+  arrayPublicKey: true,
+  description: "Uses the Falcon-512 Poseidon account (native hash-to-point). Signing is delegated to an external signer that returns the 60-felt hint signature layout."
+});
+
 const builtInSchemes = new Map<string, PqSignatureScheme>([
   [ecdsaStarkScheme.key, ecdsaStarkScheme],
   ["ecdsa_stark", ecdsaStarkScheme],
   [falcon512Scheme.key, falcon512Scheme],
   ["falcon_512", falcon512Scheme],
   [falcon512DirectScheme.key, falcon512DirectScheme],
-  ["falcon_512_direct", falcon512DirectScheme]
+  ["falcon_512_direct", falcon512DirectScheme],
+  [falcon512ShakeScheme.key, falcon512ShakeScheme],
+  ["falcon_512_shake", falcon512ShakeScheme],
+  [falcon512PoseidonScheme.key, falcon512PoseidonScheme],
+  ["falcon_512_poseidon", falcon512PoseidonScheme]
 ]);
 
 export function listSchemes(): PqSignatureScheme[] {
-  return [ecdsaStarkScheme, falcon512Scheme, falcon512DirectScheme];
+  return [
+    ecdsaStarkScheme,
+    falcon512Scheme,
+    falcon512DirectScheme,
+    falcon512ShakeScheme,
+    falcon512PoseidonScheme
+  ];
 }
 
 export function resolveScheme(key: string, allowExternal: boolean): PqSignatureScheme {

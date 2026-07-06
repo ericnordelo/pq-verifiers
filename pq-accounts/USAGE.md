@@ -14,17 +14,20 @@ Paths below are relative to this `pq-accounts/` directory.
 
 - `contracts/` — the deployable account contracts. `contracts/src/accounts/` holds one
   account per verifier scheme (`EcdsaStarkAccount`, `Falcon512Account`,
-  `Falcon512DirectAccount`); `contracts/src/utils/` holds the shared account interfaces
-  and the execution/validation helpers.
+  `Falcon512DirectAccount`, `Falcon512ShakeAccount`, `Falcon512PoseidonAccount`);
+  `contracts/src/utils/` holds the shared account interfaces, the execution/validation
+  helpers, and the verifier-generic `PqAccountComponent` the Falcon accounts embed.
 - `cli/` — a Starknet.js command line tool (`accounts`, `public-key`,
   `constructor-calldata`, `sign-hash`, `deploy-account`, `execute`).
 - `signers/falcon-python/` — an external Falcon signer wrapping `tprest/falcon.py`, which
-  signs Starknet transaction hashes with the same BLAKE2s hash-to-point as
-  `crates/falcon_512`.
+  signs Starknet transaction hashes with the hash-to-point construction of the requested
+  scheme: BLAKE2s (matching `crates/falcon_512`'s hint and direct variants), the standard
+  SHAKE-256 of the Falcon specification, or the native-Poseidon squeeze.
 
 The account descriptors the CLI exposes: `ecdsa-stark` (1 pubkey felt, `[r, s]`),
 `falcon-512` (29 pubkey felts, 60 signature felts), `falcon-512-direct` (29 pubkey felts,
-31 signature felts).
+31 signature felts), `falcon-512-shake` and `falcon-512-poseidon` (29 pubkey felts, 60
+signature felts each).
 
 ## One-time setup
 
@@ -103,16 +106,20 @@ RPC=http://127.0.0.1:5050/rpc
      --calldata 0xRECIPIENT 0x1 0x0
    ```
 
-## `falcon-512-direct`
+## The other Falcon variants
 
-Identical flow with the direct account and scheme:
+Identical flow with the variant's account contract and scheme key:
 
-- Declare `Falcon512DirectAccount` (`sncast declare --contract-name Falcon512DirectAccount`).
-- Use `--scheme falcon-512-direct` in `constructor-calldata`, `deploy-account`, and
-  `execute`.
+| Scheme key | Contract to declare | Signature | Hash-to-point |
+|---|---|---|---|
+| `falcon-512-direct` | `Falcon512DirectAccount` | 31 felts (`s1 \|\| salt`) | BLAKE2s |
+| `falcon-512-shake` | `Falcon512ShakeAccount` | 60 felts (hint layout) | standard SHAKE-256 |
+| `falcon-512-poseidon` | `Falcon512PoseidonAccount` | 60 felts (hint layout) | native Poseidon |
 
-The same key file works: the signer returns the 60-felt hint signature for `falcon-512`
-and the 31-felt `s1 || salt` prefix for `falcon-512-direct`.
+Declare the contract (`sncast declare --contract-name <Contract>`) and pass the scheme
+key to `constructor-calldata`, `deploy-account`, and `execute`. The same key file serves
+every variant: the Falcon keypair is hash-to-point agnostic, and the signer selects the
+construction from the scheme key in each request.
 
 ## Handy checks
 
