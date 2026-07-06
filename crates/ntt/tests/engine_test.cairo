@@ -7,7 +7,7 @@
 //! `scripts/gen_ntt_tables.py` carries the same argument in Python, including the
 //! bound-growth safety proof.
 
-use pqbench_ntt::engine::{intt, ntt};
+use pqbench_ntt::engine::{intt, ntt, ntt_lazy};
 use pqbench_ntt::falcon512::{
     PRODUCT_BITS, PRODUCT_BOUND_FELT, Q, REDUCED_BITS, config, config_for_degree,
 };
@@ -282,6 +282,60 @@ fn test_negacyclic_wrap_lazy_products() {
     while let Some(c) = res.pop_front() {
         assert_eq!(*c, 0);
     }
+}
+
+/// The unreduced forward transform must agree with [`ntt`] coefficient-wise mod q,
+/// and every output must stay below the exact bound it reports.
+#[test]
+fn test_ntt_lazy_matches_reduced() {
+    let q_nz: NonZero<u128> = 12289_u128.try_into().unwrap();
+    let mut n: u32 = 4;
+    while n != 1024 {
+        let cfg = config_for_degree(n, levels_of(n));
+        let f = to_felts(pseudorandom(11 * n.into(), n).span());
+        let (lazy, bits, bound) = ntt_lazy(f.span(), @cfg);
+        let expect = ntt(f.span(), @cfg);
+        assert!(bits <= 126);
+        let bound_u128: u128 = bound.try_into().unwrap();
+        let mut li = lazy.span();
+        let mut ei = expect.span();
+        while let Some(v) = li.pop_front() {
+            let vu: u128 = (*v).try_into().unwrap();
+            assert!(vu < bound_u128);
+            let (_, rem) = DivRem::div_rem(vu, q_nz);
+            let e: felt252 = *ei.pop_front().unwrap();
+            assert_eq!(Into::<u128, felt252>::into(rem), e);
+        }
+        n = 2 * n;
+    }
+}
+
+/// Pointwise products of an unreduced transform against a reduced one, fed to the
+/// INTT under the lazy bound (the direct Falcon variant's pipeline), must match the
+/// fully reduced computation.
+#[test]
+fn test_ntt_lazy_product_pipeline() {
+    let cfg = config();
+    let a = to_felts(pseudorandom(5, 512).span());
+    let b = to_felts(pseudorandom(6, 512).span());
+    let (a_lazy, bits, bound) = ntt_lazy(a.span(), @cfg);
+    let b_ntt = ntt(b.span(), @cfg);
+
+    let mut lazy: Array<felt252> = array![];
+    let mut reduced: Array<u16> = array![];
+    let mut ai = a_lazy.span();
+    let mut a_red = ntt(a.span(), @cfg).span();
+    let mut bi = b_ntt.span();
+    while let Some(x) = ai.pop_front() {
+        let y = *bi.pop_front().unwrap();
+        lazy.append(*x * y);
+        let xu: u16 = (*a_red.pop_front().unwrap()).try_into().unwrap();
+        let yu: u16 = y.try_into().unwrap();
+        reduced.append(mul_mod(xu, yu));
+    }
+    let got = intt(lazy.span(), bits + REDUCED_BITS, bound * 12289, @cfg);
+    let expect = oracle_intt(reduced.span());
+    assert_felts_eq_u16(got.span(), expect);
 }
 
 /// Lazy-product INTT must agree with reducing the products first.

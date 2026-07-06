@@ -12,6 +12,7 @@ import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -23,9 +24,19 @@ FLAT_RE = re.compile(r'^\s*(\d+)\s+steps\s+\|\s*([\d.]+)%.*\|\s*"(.+)"\s*$')
 HARNESS = ("snforge", "SNFORGE_TEST_CODE", "cheatcode", "ResultSerde", "__snforge")
 
 
+def clear_traces():
+    """Remove stale trace directories so every profile reads a trace from this run."""
+    for d in glob.glob(os.path.join(ROOT, "crates", "*", "snfoundry_trace")):
+        shutil.rmtree(d, ignore_errors=True)
+
+
 def trace_path(test):
-    hits = glob.glob(os.path.join(ROOT, "crates", "*", "snfoundry_trace", f"*{test}.json"))
-    return hits[0] if hits else None
+    """The trace for exactly `test`: snforge writes one file per test, named after the
+    full test path with `::` replaced by `_`, so the module prefix always ends with an
+    underscore before the test name. Substring-named tests (e.g. `<test>_shake`) do not
+    match; if several modules define the same short name, take the newest trace."""
+    hits = glob.glob(os.path.join(ROOT, "crates", "*", "snfoundry_trace", f"*_{test}.json"))
+    return max(hits, key=os.path.getmtime) if hits else None
 
 
 def profile_scheme(scheme):
@@ -62,6 +73,7 @@ def profile_scheme(scheme):
 
 
 def main():
+    clear_traces()
     data = json.load(open(RESULTS))
     for s in data["schemes"]:
         if not s.get("measured"):

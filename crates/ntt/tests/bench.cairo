@@ -3,7 +3,7 @@
 //! transform; the others add the measured work. These pairs feed the efficiency
 //! ratchet (`efficiency_baseline.json` via `scripts/check_efficiency.py`).
 
-use pqbench_ntt::engine::{intt, ntt};
+use pqbench_ntt::engine::{intt, ntt, ntt_lazy};
 use pqbench_ntt::falcon512::{REDUCED_BITS, config};
 
 fn pseudorandom_felts(seed: u64, n: u32) -> Array<felt252> {
@@ -30,6 +30,15 @@ fn bench_ntt_fwd_512() {
     let f = pseudorandom_felts(1, 512);
     let cfg = config();
     let out = ntt(f.span(), @cfg);
+    assert!(out.len() == 512);
+}
+
+/// One forward 512-point transform without the final reduction pass.
+#[test]
+fn bench_ntt_fwd_lazy_512() {
+    let f = pseudorandom_felts(1, 512);
+    let cfg = config();
+    let (out, _, _) = ntt_lazy(f.span(), @cfg);
     assert!(out.len() == 512);
 }
 

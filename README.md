@@ -5,6 +5,8 @@
 _Comparing candidate post-quantum signature verifiers for a Starknet account by their
 verification cost._
 
+_Last updated: 2026-07-06._
+
 ## Why
 
 Starknet's STARK proofs are post-quantum. The ECDSA signatures that authorize account
@@ -31,43 +33,46 @@ Current efficiency of every measured entry, per crate (the values pinned in
 | Crate | Measurement | L2 gas | Steps | % of gas cap |
 |---|---|--:|--:|--:|
 | [`ecdsa_stark`](crates/ecdsa_stark) | verify (classical control) | 30,855 | 152 | 0.03% |
-| [`falcon_512`](crates/falcon_512) | verify, hint variant (BLAKE2s) | 35,643,340 | 322,958 | 35.6% |
-| [`falcon_512`](crates/falcon_512) | verify, direct variant (BLAKE2s) | 37,190,480 | 340,697 | 37.2% |
-| [`falcon_512`](crates/falcon_512) | verify, Poseidon variant (native) | 36,885,049 | 334,374 | 36.9% |
-| [`falcon_512`](crates/falcon_512) | verify, SHAKE-256 variant (standard) | 202,528,285 | 1,613,066 | 202.5% ⚠ |
+| [`falcon_512`](crates/falcon_512) | verify, hint variant (BLAKE2s) | 26,611,400 | 239,795 | 26.6% |
+| [`falcon_512`](crates/falcon_512) | verify, direct variant (BLAKE2s) | 31,118,060 | 284,834 | 31.1% |
+| [`falcon_512`](crates/falcon_512) | verify, Poseidon variant (native) | 26,488,669 | 237,462 | 26.5% |
+| [`falcon_512`](crates/falcon_512) | verify, SHAKE-256 variant (standard) | 63,965,138 | 447,823 | 64.0% |
 | [`bench_targets`](crates/bench_targets) | ECDSA-STARK account, inside `__validate__` | 160,795 | 1,437 | 0.16% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 hint account, inside `__validate__` | 37,213,800 | 337,228 | 37.2% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 direct account, inside `__validate__` | 38,710,030 | 354,481 | 38.7% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 Poseidon account, inside `__validate__` | 38,455,509 | 348,643 | 38.5% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 SHAKE-256 account, inside `__validate__` | 204,098,345 | 1,627,331 | 204.1% ⚠ |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 hint account, inside `__validate__` | 28,181,860 | 254,065 | 28.2% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 direct account, inside `__validate__` | 32,637,610 | 298,618 | 32.6% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 Poseidon account, inside `__validate__` | 28,059,129 | 251,731 | 28.1% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 SHAKE-256 account, inside `__validate__` | 65,535,198 | 462,088 | 65.5% |
 | [`ntt`](crates/ntt) | forward 512-point transform | 8,895,740 | 81,826 | 8.9% |
+| [`ntt`](crates/ntt) | forward transform, unreduced output | 7,832,270 | 73,587 | 7.8% |
 | [`ntt`](crates/ntt) | forward + inverse roundtrip | 22,725,980 | 211,044 | 22.7% |
 | [`ml_dsa_44`](crates/ml_dsa_44) | verify | stub (not yet measured) | — | — |
 | [`poseidon_wots`](crates/poseidon_wots) | verify | stub (not yet measured) | — | — |
 
-⚠ exceeds the validation cap; a benchmark target, not deployable as-is (see below).
-
 ECDSA-STARK is the classical scheme in use today, a cost reference rather than a PQ
 candidate. Falcon-512 is the first PQ verifier measured, in four variants that share one
-NTT-domain public key and hint-based core (two forward NTTs on the shared lazy-reduction NTT
-engine [`crates/ntt`](crates/ntt): felt252 butterflies, at most two reduction passes per
-transform). The `direct` variant instead computes `INTT(NTT(s1) ∘ h_ntt)`, trading its
-inverse transform for half the signature calldata (31 vs 60 felts) and no signer-supplied
-hint, at a ~4% cost premium. The variants otherwise differ only in the on-chain
-hash-to-point that binds the message:
+NTT-domain public key and hint-based core: two forward NTTs on the shared lazy-reduction NTT
+engine [`crates/ntt`](crates/ntt) (felt252 butterflies), taken unreduced — the verifier folds
+the final reduction into its pointwise divisibility check instead of paying reduction passes.
+The `direct` variant instead computes `INTT(NTT(s1) ∘ h_ntt)`, trading its inverse transform
+for half the signature calldata (31 vs 60 felts) and no signer-supplied hint, at a ~17% cost
+premium. The variants otherwise differ only in the on-chain hash-to-point that binds the
+message:
 
 - **BLAKE2s** (hint and direct): a non-standard XOF swap via the `core::blake` builtin.
-  Cheapest, but needs a matching signer.
-- **Poseidon**: a native `hades_permutation` squeeze. Message-binding, comparable in cost to
-  BLAKE2s (and cheaper than the direct variant), and the most STARK-proving-friendly since it
-  uses native field arithmetic. Also non-standard.
+  Nearly the cheapest, but needs a matching signer.
+- **Poseidon**: a native `hades_permutation` squeeze. Message-binding, the cheapest variant
+  (marginally below BLAKE2s), and the most STARK-proving-friendly since it uses native field
+  arithmetic. Also non-standard.
 - **SHAKE-256**: the standard Falcon hash-to-point, interoperable with any compliant signer
-  (e.g. falcon.py). A pure-Cairo Keccak-f[1600] costs ~1.3M steps for hash-to-point alone,
-  pushing verification to ~2× the step cap (⚠ above), so this variant is viable on-chain only
-  with a native `keccak_f1600` syscall ([SNIP-32](https://github.com/starknet-io/SNIPs)).
+  (e.g. falcon.py). The pure-Cairo Keccak-f[1600] (flat unrolled rounds, u128 lanes, lazy
+  block squeezing) keeps hash-to-point around 0.2M steps, so even the standards-compliant
+  variant fits both validation caps — at ~2.4× the cost of the non-standard ones. A native
+  `keccak_f1600` syscall ([SNIP-32](https://github.com/starknet-io/SNIPs)) would close the
+  remaining gap.
 
-All four use genuine falcon.py-signed fixtures, and all but SHAKE-256 fit the caps with wide
-margin.
+All four use genuine falcon.py-signed fixtures and fit the validation caps — the non-standard
+variants with wide margin, SHAKE-256 at about two-thirds of the gas cap and under half the
+step cap.
 
 All four derive the message point on-chain from `message_hash`, which binds the signature to
 the message. The reference Starknet Falcon verifier

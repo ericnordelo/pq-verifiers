@@ -6,13 +6,21 @@
 //! `||msg_point - mul_hint||^2 + ||s1||^2 <= SIG_BOUND_512` over centered
 //! representatives. Since `msg_point - s1*h = s0`, this is the Falcon verification
 //! equation with the polynomial multiplication delegated to a signer-supplied hint;
-//! a bad hint yields `false`.
+//! a bad hint yields `false`. Both transforms are taken unreduced (the engine's
+//! [`ntt_lazy`] entry point), and the pointwise check is a divisibility test on
+//! `s1n*h + off - hn` — congruences mod q hold regardless of the reduction, so no
+//! reduction pass is ever paid on the NTT outputs.
 //!
 //! Direct variant: computes `s1 * h` on-chain as `INTT(NTT(s1) ∘ h_ntt)` — the
-//! pointwise products feed the INTT unreduced (the engine's lazy-product path).
+//! unreduced transform's pointwise products feed the INTT directly (the engine's
+//! lazy-product path).
+//!
+//! Coefficient spans arrive as felts in `[0, Q)` (the form `packing::unpack_512`
+//! validates and the NTT engine consumes); the norm side downcasts them to `u16`
+//! per coefficient.
 
-use pqbench_ntt::engine::{intt, ntt, reduce_felt};
-use pqbench_ntt::falcon512::{PRODUCT_BITS, PRODUCT_BOUND_FELT, config};
+use pqbench_ntt::engine::{intt, ntt_lazy};
+use pqbench_ntt::falcon512::{Q_FELT, REDUCED_BITS, config};
 use crate::zq::{center_sq, sub_mod};
 
 /// Maximum allowed `||s0||^2 + ||s1||^2` for Falcon-512 (FIPS 206 / falcon.py sig_bound).
@@ -21,20 +29,11 @@ pub const SIG_BOUND_512: u64 = 34034726;
 /// The Falcon modulus as a u128 divisor.
 const Q_NZ: NonZero<u128> = 12289;
 
-/// Upcast a coefficient span for the engine.
-pub fn to_felts(mut vals: Span<u16>) -> Array<felt252> {
-    let mut out: Array<felt252> = array![];
-    while let Some(v) = vals.pop_front() {
-        out.append((*v).into());
-    }
-    out
-}
-
-/// Verify with a signer-supplied product hint. All spans must have length 512 and
+/// Verify with a signer-supplied product hint. All spans must have length 512 with
 /// coefficients in `[0, Q)` — guaranteed by `packing::unpack_512` and
 /// `hash_to_point::hash_to_point_512`.
 pub fn verify_512_with_hint(
-    s1: Span<u16>, h_ntt: Span<u16>, mul_hint: Span<u16>, msg_point: Span<u16>,
+    s1: Span<felt252>, h_ntt: Span<felt252>, mul_hint: Span<felt252>, msg_point: Span<u16>,
 ) -> bool {
     assert(s1.len() == 512, 's1 must be 512 coeffs');
     assert(h_ntt.len() == 512, 'h_ntt must be 512 coeffs');
@@ -42,8 +41,11 @@ pub fn verify_512_with_hint(
     assert(msg_point.len() == 512, 'msg_point must be 512 coeffs');
 
     let cfg = config();
-    let s1_ntt = ntt(to_felts(s1).span(), @cfg);
-    let hint_ntt = ntt(to_felts(mul_hint).span(), @cfg);
+    let (s1_ntt, _, bound) = ntt_lazy(s1, @cfg);
+    let (hint_ntt, _, _) = ntt_lazy(mul_hint, @cfg);
+    // A multiple of q dominating the lazy hn (< bound), so the divisibility operand
+    // stays non-negative; s1n*h + off < 2·bound·q < 2^43 always fits u128.
+    let off = bound * Q_FELT;
 
     let mut s1_ntt_iter = s1_ntt.span();
     let mut hint_ntt_iter = hint_ntt.span();
@@ -52,23 +54,39 @@ pub fn verify_512_with_hint(
     let mut hint_iter = mul_hint;
     let mut s1_iter = s1;
 
-    // Fused pass: hint check and centered-norm accumulation per coefficient.
+    // Fused pass, 4-way unrolled (512 = 4 * 128, no remainder): hint check and
+    // centered-norm accumulation per coefficient.
     // Max acc = 512 * 2 * 6144^2 < 2^36, so the felt252 accumulator cannot wrap
     // and always fits u64.
     let mut acc: felt252 = 0;
     let mut ok = true;
-    while let Some(s1n) = s1_ntt_iter.pop_front() {
-        let hn = *hint_ntt_iter.pop_front().unwrap();
-        let h: felt252 = (*h_iter.pop_front().unwrap()).into();
-        // s1n, h < q, so the product is < q^2 < 2^28 and reduces through u128.
-        if reduce_felt(*s1n * h, Q_NZ) != hn {
+    while let Some(s1n_c) = s1_ntt_iter.multi_pop_front::<4>() {
+        let [s1n0, s1n1, s1n2, s1n3] = (*s1n_c).unbox();
+        let [hn0, hn1, hn2, hn3] = (*hint_ntt_iter.multi_pop_front::<4>().unwrap()).unbox();
+        let [h0, h1, h2, h3] = (*h_iter.multi_pop_front::<4>().unwrap()).unbox();
+        // s1n*h + off - hn ≡ s1n*h - hn (mod q): a zero remainder iff the two NTT
+        // coordinates agree mod q, which by bijectivity binds mul_hint to s1*h.
+        let d0: u128 = (s1n0 * h0 + off - hn0).try_into().unwrap();
+        let (_, r0) = DivRem::div_rem(d0, Q_NZ);
+        let d1: u128 = (s1n1 * h1 + off - hn1).try_into().unwrap();
+        let (_, r1) = DivRem::div_rem(d1, Q_NZ);
+        let d2: u128 = (s1n2 * h2 + off - hn2).try_into().unwrap();
+        let (_, r2) = DivRem::div_rem(d2, Q_NZ);
+        let d3: u128 = (s1n3 * h3 + off - hn3).try_into().unwrap();
+        let (_, r3) = DivRem::div_rem(d3, Q_NZ);
+        // Remainders are non-negative, so the sum is zero iff all four are.
+        if r0 + r1 + r2 + r3 != 0 {
             ok = false;
             break;
         }
-        let msg = *msg_iter.pop_front().unwrap();
-        let hint = *hint_iter.pop_front().unwrap();
-        let s1v = *s1_iter.pop_front().unwrap();
-        acc += center_sq(sub_mod(msg, hint)) + center_sq(s1v);
+        let [m0, m1, m2, m3] = (*msg_iter.multi_pop_front::<4>().unwrap()).unbox();
+        let [t0, t1, t2, t3] = (*hint_iter.multi_pop_front::<4>().unwrap()).unbox();
+        let [v0, v1, v2, v3] = (*s1_iter.multi_pop_front::<4>().unwrap()).unbox();
+        // Unpacked coefficients are < q, so the u16 downcasts never fail.
+        acc += center_sq(sub_mod(m0, t0.try_into().unwrap())) + center_sq(v0.try_into().unwrap());
+        acc += center_sq(sub_mod(m1, t1.try_into().unwrap())) + center_sq(v1.try_into().unwrap());
+        acc += center_sq(sub_mod(m2, t2.try_into().unwrap())) + center_sq(v2.try_into().unwrap());
+        acc += center_sq(sub_mod(m3, t3.try_into().unwrap())) + center_sq(v3.try_into().unwrap());
     }
     if !ok {
         return false;
@@ -82,36 +100,41 @@ pub fn verify_512_with_hint(
 /// the NTT domain — then accept iff `||msg_point - s1*h||^2 + ||s1||^2 <= SIG_BOUND_512`.
 /// Same trust surface as the textbook equation (no signer-supplied hint), 29 fewer
 /// signature felts than [`verify_512_with_hint`], at the cost of the INTT.
-pub fn verify_512_direct(s1: Span<u16>, h_ntt: Span<u16>, msg_point: Span<u16>) -> bool {
+pub fn verify_512_direct(s1: Span<felt252>, h_ntt: Span<felt252>, msg_point: Span<u16>) -> bool {
     assert(s1.len() == 512, 's1 must be 512 coeffs');
     assert(h_ntt.len() == 512, 'h_ntt must be 512 coeffs');
     assert(msg_point.len() == 512, 'msg_point must be 512 coeffs');
 
     let cfg = config();
-    let s1_ntt = ntt(to_felts(s1).span(), @cfg);
+    let (s1_ntt, bits, bound) = ntt_lazy(s1, @cfg);
 
-    // Pointwise products, UNREDUCED (< q^2): the engine's lazy-product INTT path
-    // reduces them for free inside its bound schedule.
+    // Pointwise products of the unreduced transform against the reduced key,
+    // UNREDUCED (< bound·q): the engine's lazy-product INTT path reduces them for
+    // free inside its bound schedule.
     let mut prods: Array<felt252> = array![];
     let mut s1n_iter = s1_ntt.span();
     let mut h_iter = h_ntt;
     while let Some(s1n) = s1n_iter.pop_front() {
-        let h: felt252 = (*h_iter.pop_front().unwrap()).into();
-        prods.append(*s1n * h);
+        prods.append(*s1n * *h_iter.pop_front().unwrap());
     }
-    let s1h = intt(prods.span(), PRODUCT_BITS, PRODUCT_BOUND_FELT, @cfg);
+    let s1h = intt(prods.span(), bits + REDUCED_BITS, bound * Q_FELT, @cfg);
 
     let mut s1h_iter = s1h.span();
     let mut msg_iter = msg_point;
     let mut s1_iter = s1;
+    // Norm pass, 4-way unrolled (512 = 4 * 128, no remainder).
     // Same accumulator bound argument as in `verify_512_with_hint`.
     let mut acc: felt252 = 0;
-    while let Some(prod) = s1h_iter.pop_front() {
-        // INTT outputs are reduced to [0, q), so the downcast never fails.
-        let p: u16 = (*prod).try_into().unwrap();
-        let msg = *msg_iter.pop_front().unwrap();
-        let s1v = *s1_iter.pop_front().unwrap();
-        acc += center_sq(sub_mod(msg, p)) + center_sq(s1v);
+    while let Some(pc) = s1h_iter.multi_pop_front::<4>() {
+        let [p0, p1, p2, p3] = (*pc).unbox();
+        let [m0, m1, m2, m3] = (*msg_iter.multi_pop_front::<4>().unwrap()).unbox();
+        let [v0, v1, v2, v3] = (*s1_iter.multi_pop_front::<4>().unwrap()).unbox();
+        // INTT outputs are reduced and s1 coefficients unpacked canonical, both < q,
+        // so the u16 downcasts never fail.
+        acc += center_sq(sub_mod(m0, p0.try_into().unwrap())) + center_sq(v0.try_into().unwrap());
+        acc += center_sq(sub_mod(m1, p1.try_into().unwrap())) + center_sq(v1.try_into().unwrap());
+        acc += center_sq(sub_mod(m2, p2.try_into().unwrap())) + center_sq(v2.try_into().unwrap());
+        acc += center_sq(sub_mod(m3, p3.try_into().unwrap())) + center_sq(v3.try_into().unwrap());
     }
     let norm: u64 = acc.try_into().unwrap();
     norm <= SIG_BOUND_512
@@ -122,7 +145,7 @@ mod tests {
     use pqbench_ntt::engine::{intt, ntt};
     use pqbench_ntt::falcon512::{PRODUCT_BITS, PRODUCT_BOUND_FELT, config};
     use crate::zq::add_mod;
-    use super::{to_felts, verify_512_direct, verify_512_with_hint};
+    use super::{verify_512_direct, verify_512_with_hint};
 
     fn to_u16(mut vals: Span<felt252>) -> Array<u16> {
         let mut out: Array<u16> = array![];
@@ -132,50 +155,55 @@ mod tests {
         out
     }
 
-    /// Forward NTT over u16 coefficients (test helper).
-    fn ntt_u16(f: Span<u16>) -> Array<u16> {
-        let cfg = config();
-        to_u16(ntt(to_felts(f).span(), @cfg).span())
-    }
-
     /// Negacyclic product in Z_q[x]/(x^512 + 1) (test helper).
-    fn mul_zq(f: Span<u16>, g: Span<u16>) -> Array<u16> {
+    fn mul_zq(f: Span<felt252>, g: Span<felt252>) -> Array<felt252> {
         let cfg = config();
-        let f_ntt = ntt(to_felts(f).span(), @cfg);
-        let g_ntt = ntt(to_felts(g).span(), @cfg);
+        let f_ntt = ntt(f, @cfg);
+        let g_ntt = ntt(g, @cfg);
         let mut prods: Array<felt252> = array![];
         let mut fi = f_ntt.span();
         let mut gi = g_ntt.span();
         while let Some(a) = fi.pop_front() {
             prods.append(*a * *gi.pop_front().unwrap());
         }
-        to_u16(intt(prods.span(), PRODUCT_BITS, PRODUCT_BOUND_FELT, @cfg).span())
+        intt(prods.span(), PRODUCT_BITS, PRODUCT_BOUND_FELT, @cfg)
     }
 
-    fn pseudorandom_coeffs(seed: u64) -> Array<u16> {
-        let mut f: Array<u16> = array![];
+    fn pseudorandom_coeffs(seed: u64) -> Array<felt252> {
+        let mut f: Array<felt252> = array![];
         let mut state: u64 = seed;
         for _ in 0_u32..512 {
             state = (state * 1664525 + 1013904223) % 0x100000000;
-            f.append((state % 12289).try_into().unwrap());
+            f.append((state % 12289).into());
         }
         f
     }
 
-    fn small_coeffs(seed: u64) -> Array<u16> {
+    fn small_coeffs(seed: u64) -> Array<felt252> {
         // Centered coefficients in [-16, 16]: comfortably inside the norm bound.
-        let mut f: Array<u16> = array![];
+        let mut f: Array<felt252> = array![];
         let mut state: u64 = seed;
         for _ in 0_u32..512 {
             state = (state * 1664525 + 1013904223) % 0x100000000;
-            let centered = (state % 33).try_into().unwrap();
-            if centered <= 16_u16 {
-                f.append(centered);
+            let centered = state % 33;
+            if centered <= 16 {
+                f.append(centered.into());
             } else {
-                f.append(12289 - (centered - 16));
+                f.append((12289 - (centered - 16)).into());
             }
         }
         f
+    }
+
+    /// msg_point = s0 + prod coefficient-wise, downcast to the norm side's u16 form.
+    fn add_points(s0: Span<felt252>, prod: Span<felt252>) -> Array<u16> {
+        let mut out: Array<u16> = array![];
+        let mut s0_iter = to_u16(s0).span();
+        let mut prod_iter = to_u16(prod).span();
+        while let Some(a) = s0_iter.pop_front() {
+            out.append(add_mod(*a, *prod_iter.pop_front().unwrap()));
+        }
+        out
     }
 
     // Synthetic instance built from the verification equation itself: pick small s1 and
@@ -186,14 +214,9 @@ mod tests {
         let s1 = small_coeffs(1);
         let s0 = small_coeffs(2);
         let h = pseudorandom_coeffs(3);
-        let h_ntt = ntt_u16(h.span());
+        let h_ntt = ntt(h.span(), @config());
         let mul_hint = mul_zq(s1.span(), h.span());
-        let mut msg_point: Array<u16> = array![];
-        let mut s0_iter = s0.span();
-        let mut prod_iter = mul_hint.span();
-        while let Some(a) = s0_iter.pop_front() {
-            msg_point.append(add_mod(*a, *prod_iter.pop_front().unwrap()));
-        }
+        let msg_point = add_points(s0.span(), mul_hint.span());
         assert!(verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span()));
     }
 
@@ -201,17 +224,17 @@ mod tests {
     fn test_verify_rejects_bad_hint() {
         let s1 = small_coeffs(1);
         let h = pseudorandom_coeffs(3);
-        let h_ntt = ntt_u16(h.span());
+        let h_ntt = ntt(h.span(), @config());
         let good_hint = mul_zq(s1.span(), h.span());
         // Flip one coefficient of the hint.
         let mut hint_iter = good_hint.span();
-        let first = *hint_iter.pop_front().unwrap();
-        let mut tampered: Array<u16> = array![(first + 1) % 12289];
+        let first: u16 = (*hint_iter.pop_front().unwrap()).try_into().unwrap();
+        let mut tampered: Array<felt252> = array![((first + 1) % 12289).into()];
         while let Some(c) = hint_iter.pop_front() {
             tampered.append(*c);
         }
         // msg_point = mul_hint would give norm ||s1||^2 only — accepted if hint passed.
-        let msg_point = mul_zq(s1.span(), h.span());
+        let msg_point = to_u16(mul_zq(s1.span(), h.span()).span());
         assert!(!verify_512_with_hint(s1.span(), h_ntt.span(), tampered.span(), msg_point.span()));
     }
 
@@ -221,14 +244,9 @@ mod tests {
         let s1 = small_coeffs(1);
         let s0 = small_coeffs(2);
         let h = pseudorandom_coeffs(3);
-        let h_ntt = ntt_u16(h.span());
+        let h_ntt = ntt(h.span(), @config());
         let prod = mul_zq(s1.span(), h.span());
-        let mut msg_point: Array<u16> = array![];
-        let mut s0_iter = s0.span();
-        let mut prod_iter = prod.span();
-        while let Some(a) = s0_iter.pop_front() {
-            msg_point.append(add_mod(*a, *prod_iter.pop_front().unwrap()));
-        }
+        let msg_point = add_points(s0.span(), prod.span());
         assert!(verify_512_direct(s1.span(), h_ntt.span(), msg_point.span()));
         // Perturb one msg_point coefficient far from the lattice point: norm blows up.
         let mut bad_msg: Array<u16> = array![add_mod(*msg_point.span().at(0), 6144)];
@@ -243,9 +261,9 @@ mod tests {
     fn test_verify_direct_rejects_large_norm() {
         let s1 = pseudorandom_coeffs(9);
         let h = pseudorandom_coeffs(3);
-        let h_ntt = ntt_u16(h.span());
+        let h_ntt = ntt(h.span(), @config());
         // msg_point = s1*h so s0 = 0; ||s1||^2 alone is far above the bound.
-        let msg_point = mul_zq(s1.span(), h.span());
+        let msg_point = to_u16(mul_zq(s1.span(), h.span()).span());
         assert!(!verify_512_direct(s1.span(), h_ntt.span(), msg_point.span()));
     }
 
@@ -255,8 +273,9 @@ mod tests {
         // with a consistent hint and msg_point = s1*h (so s0 = 0).
         let s1 = pseudorandom_coeffs(9);
         let h = pseudorandom_coeffs(3);
-        let h_ntt = ntt_u16(h.span());
+        let h_ntt = ntt(h.span(), @config());
         let mul_hint = mul_zq(s1.span(), h.span());
-        assert!(!verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), mul_hint.span()));
+        let msg_point = to_u16(mul_hint.span());
+        assert!(!verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span()));
     }
 }

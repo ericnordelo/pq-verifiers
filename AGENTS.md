@@ -77,9 +77,9 @@ A change is complete only when everything it invalidates is regenerated in the s
 | `pq-accounts` account contracts, CLI, or signers | re-check every command and layout reference in `pq-accounts/USAGE.md` and update as needed |
 
 Generated files are never hand-edited: `results/*`, `crates/ntt/src/roots_scaled.cairo`,
-`crates/ntt/src/bitrev.cairo`, `crates/falcon_512/src/fixtures/blake.cairo`,
-`crates/falcon_512/src/fixtures/shake.cairo`, `crates/falcon_512/src/fixtures/poseidon.cairo`.
-Regenerate via the owning script.
+`crates/ntt/src/roots_felt.cairo`, `crates/ntt/src/bitrev.cairo`,
+`crates/falcon_512/src/fixtures/blake.cairo`, `crates/falcon_512/src/fixtures/shake.cairo`,
+`crates/falcon_512/src/fixtures/poseidon.cairo`. Regenerate via the owning script.
 
 ## Performance: every public API is regression-checked
 

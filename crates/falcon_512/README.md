@@ -19,13 +19,18 @@ signature, no hint),
 check as `falcon_512`), and
 **Poseidon** (`falcon_512_poseidon`: a native `hades_permutation` squeeze, same hint check).
 The three hint variants differ only in the hash-to-point. BLAKE2s and Poseidon are cheap and
-message-binding but non-standard (each needs a matching signer); Poseidon, built on native
-field arithmetic, is also the most STARK-proving-friendly. SHAKE-256 is interoperable with
-any standards-compliant Falcon signer, but its pure-Cairo Keccak-f[1600] dominates cost and
-pushes verification past the validation step cap, so that variant is a benchmark target
-rather than a deployable account (a `keccak_f1600` syscall, SNIP-32, would close the gap). Packed inputs are validated canonical on unpack. The bench fixtures are
-genuine signatures from the reference falcon.py sampler (`scripts/gen_falcon_fixture.py`,
-`--variant shake` / `--variant poseidon`); tampered variants are rejected in tests.
+message-binding but non-standard (each needs a matching signer); Poseidon — the cheapest
+variant — is built on native field arithmetic and therefore also the most
+STARK-proving-friendly. SHAKE-256 is interoperable with any standards-compliant Falcon
+signer; its pure-Cairo Keccak-f[1600] (flat unrolled rounds over u128 lanes, lazy block
+squeezing — see `src/hashing/shake256.cairo`) dominates that variant's cost at roughly 2.4×
+the non-standard ones, while staying within both validation caps, so even the
+standards-compliant variant is deployable (a `keccak_f1600` syscall, SNIP-32, would close
+the remaining gap). Packed inputs are validated canonical on unpack, and the verifier
+consumes the NTT engine's unreduced transforms, folding reduction into its pointwise
+divisibility check. The bench fixtures are genuine signatures from the reference falcon.py
+sampler (`scripts/gen_falcon_fixture.py`, `--variant shake` / `--variant poseidon`);
+tampered variants are rejected in tests.
 
 Implements `PqSignatureVerifier`.
 References: [Falcon spec](https://falcon-sign.info/falcon.pdf) ·
@@ -36,7 +41,7 @@ References: [Falcon spec](https://falcon-sign.info/falcon.pdf) ·
 
 | Measurement | L2 gas | Steps |
 |---|--:|--:|
-| verify, hint variant (BLAKE2s) | 35,643,340 | 322,958 |
-| verify, direct variant (BLAKE2s) | 37,190,480 | 340,697 |
-| verify, Poseidon variant (native) | 36,885,049 | 334,374 |
-| verify, SHAKE-256 variant (standard) | 202,528,285 | 1,613,066 |
+| verify, hint variant (BLAKE2s) | 26,611,400 | 239,795 |
+| verify, direct variant (BLAKE2s) | 31,118,060 | 284,834 |
+| verify, Poseidon variant (native) | 26,488,669 | 237,462 |
+| verify, SHAKE-256 variant (standard) | 63,965,138 | 447,823 |

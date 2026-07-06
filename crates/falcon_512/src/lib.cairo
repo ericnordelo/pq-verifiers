@@ -88,8 +88,8 @@ pub impl Falcon512DirectVerifier of PqSignatureVerifier {
 /// but the message point uses the FIPS 206 SHAKE-256 hash-to-point
 /// ([`hash_to_point::hash_to_point_shake_512`]), so signatures are interoperable with any
 /// standards-compliant Falcon signer. Verification cost is dominated by the pure-Cairo
-/// Keccak-f[1600] permutations (see `hashing/shake256.cairo`) and exceeds the validation
-/// step cap, so this variant is a benchmark target rather than a deployable account.
+/// Keccak-f[1600] permutations (see `hashing/shake256.cairo`) yet stays within both
+/// validation caps, so even the standards-compliant variant is deployable.
 pub impl Falcon512ShakeVerifier of PqSignatureVerifier {
     fn verify(message_hash: felt252, public_key: Span<felt252>, signature: Span<felt252>) -> bool {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS {
@@ -121,8 +121,8 @@ pub impl Falcon512ShakeVerifier of PqSignatureVerifier {
 /// message point uses the native-Poseidon hash-to-point
 /// ([`hash_to_point::hash_to_point_poseidon_512`]). Non-standard (a matching custom signer
 /// is required); the hash-to-point runs on the Poseidon builtin rather than a bit-oriented
-/// hash, so its cost is small — the shared NTT/hint core dominates. On-chain cost is close
-/// to the BLAKE2s variant and far below SHAKE-256, fitting the validation cap comfortably.
+/// hash, so its cost is small — the shared NTT/hint core dominates. The cheapest variant
+/// on-chain (marginally below BLAKE2s), fitting the validation cap comfortably.
 pub impl Falcon512PoseidonVerifier of PqSignatureVerifier {
     fn verify(message_hash: felt252, public_key: Span<felt252>, signature: Span<felt252>) -> bool {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS {

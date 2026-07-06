@@ -48,6 +48,21 @@ def run_snforge(extra_args):
     return proc.stdout + "\n" + proc.stderr
 
 
+def toolchain_versions():
+    """The pinned toolchain, read from .tool-versions (the single source of truth)."""
+    tools = {}
+    with open(os.path.join(ROOT, ".tool-versions")) as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) == 2:
+                tools[parts[0]] = parts[1]
+    return {
+        "scarb": tools.get("scarb"),
+        "snforge": tools.get("starknet-foundry"),
+        "cairo_profiler": tools.get("cairo-profiler"),
+    }
+
+
 def parse(output):
     """Parse snforge stdout into {short_test_name: {metric: value}}."""
     results = {}
@@ -174,7 +189,7 @@ def main():
     out = {
         "metadata": {
             "generated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "toolchain": {"scarb": "2.18.0", "snforge": "0.59.0", "cairo_profiler": "0.8.0"},
+            "toolchain": toolchain_versions(),
             "caps": CAPS,
             "gas_table_l2": GAS_TABLE_L2,
             "l2_gas_per_calldata_felt": L2_GAS_PER_CALLDATA_FELT,

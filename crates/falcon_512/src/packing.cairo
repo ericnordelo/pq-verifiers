@@ -20,21 +20,24 @@ const LAST_SLOT_VALS: u32 = 8;
 
 const TWO_POW_128: felt252 = 0x100000000000000000000000000000000;
 
-/// Unpack 29 packed felts into 512 coefficients in [0, Q).
+/// Unpack 29 packed felts into 512 coefficients in [0, Q), as felts (each is a
+/// base-Q digit, so the range holds by construction).
 /// Returns `None` on wrong length or any non-canonical slot encoding.
-pub fn unpack_512(mut packed: Span<felt252>) -> Option<Array<u16>> {
+pub fn unpack_512(mut packed: Span<felt252>) -> Option<Array<felt252>> {
     if packed.len() != PACKED_SLOTS {
         return None;
     }
-    let mut coeffs: Array<u16> = array![];
+    let q_nz: NonZero<u128> = 12289;
+    let mut coeffs: Array<felt252> = array![];
     let mut slot: u32 = 0;
     let mut ok = true;
     while let Some(felt) = packed.pop_front() {
         let value: u256 = (*felt).into();
         if slot == PACKED_SLOTS - 1 {
-            ok = value.high == 0 && unpack_half(value.low, LAST_SLOT_VALS, ref coeffs);
+            ok = value.high == 0 && unpack_half8(value.low, q_nz, ref coeffs);
         } else {
-            ok = unpack_half(value.low, 9, ref coeffs) && unpack_half(value.high, 9, ref coeffs);
+            ok = unpack_half9(value.low, q_nz, ref coeffs)
+                && unpack_half9(value.high, q_nz, ref coeffs);
         }
         if !ok {
             break;
@@ -48,16 +51,50 @@ pub fn unpack_512(mut packed: Span<felt252>) -> Option<Array<u16>> {
     }
 }
 
-/// Extract `count` base-Q digits from a u128 half; true iff the residue is zero
-/// (i.e. the half is a canonical encoding of exactly `count` digits).
-fn unpack_half(value: u128, count: u32, ref coeffs: Array<u16>) -> bool {
-    let q_nz: NonZero<u128> = 12289_u128.try_into().unwrap();
-    let mut rest = value;
-    for _ in 0..count {
-        let (quot, rem) = DivRem::div_rem(rest, q_nz);
-        coeffs.append(rem.try_into().unwrap());
-        rest = quot;
-    }
+/// Extract nine base-Q digits from a u128 half; true iff the residue is zero
+/// (i.e. the half is a canonical encoding of exactly nine digits).
+#[inline(always)]
+fn unpack_half9(value: u128, q_nz: NonZero<u128>, ref coeffs: Array<felt252>) -> bool {
+    let (rest, d0) = DivRem::div_rem(value, q_nz);
+    let (rest, d1) = DivRem::div_rem(rest, q_nz);
+    let (rest, d2) = DivRem::div_rem(rest, q_nz);
+    let (rest, d3) = DivRem::div_rem(rest, q_nz);
+    let (rest, d4) = DivRem::div_rem(rest, q_nz);
+    let (rest, d5) = DivRem::div_rem(rest, q_nz);
+    let (rest, d6) = DivRem::div_rem(rest, q_nz);
+    let (rest, d7) = DivRem::div_rem(rest, q_nz);
+    let (rest, d8) = DivRem::div_rem(rest, q_nz);
+    coeffs.append(d0.into());
+    coeffs.append(d1.into());
+    coeffs.append(d2.into());
+    coeffs.append(d3.into());
+    coeffs.append(d4.into());
+    coeffs.append(d5.into());
+    coeffs.append(d6.into());
+    coeffs.append(d7.into());
+    coeffs.append(d8.into());
+    rest == 0
+}
+
+/// Extract the last slot's eight base-Q digits; true iff the residue is zero.
+#[inline(always)]
+fn unpack_half8(value: u128, q_nz: NonZero<u128>, ref coeffs: Array<felt252>) -> bool {
+    let (rest, d0) = DivRem::div_rem(value, q_nz);
+    let (rest, d1) = DivRem::div_rem(rest, q_nz);
+    let (rest, d2) = DivRem::div_rem(rest, q_nz);
+    let (rest, d3) = DivRem::div_rem(rest, q_nz);
+    let (rest, d4) = DivRem::div_rem(rest, q_nz);
+    let (rest, d5) = DivRem::div_rem(rest, q_nz);
+    let (rest, d6) = DivRem::div_rem(rest, q_nz);
+    let (rest, d7) = DivRem::div_rem(rest, q_nz);
+    coeffs.append(d0.into());
+    coeffs.append(d1.into());
+    coeffs.append(d2.into());
+    coeffs.append(d3.into());
+    coeffs.append(d4.into());
+    coeffs.append(d5.into());
+    coeffs.append(d6.into());
+    coeffs.append(d7.into());
     rest == 0
 }
 
@@ -110,13 +147,21 @@ mod tests {
         f
     }
 
+    fn as_felts(mut vals: Span<u16>) -> Array<felt252> {
+        let mut out: Array<felt252> = array![];
+        while let Some(v) = vals.pop_front() {
+            out.append((*v).into());
+        }
+        out
+    }
+
     #[test]
     fn test_pack_unpack_roundtrip() {
         let coeffs = pseudorandom_coeffs();
         let packed = pack_512(coeffs.span());
         assert_eq!(packed.len(), PACKED_SLOTS);
         let unpacked = unpack_512(packed.span()).unwrap();
-        assert_eq!(unpacked.span(), coeffs.span());
+        assert_eq!(unpacked.span(), as_felts(coeffs.span()).span());
     }
 
     #[test]
@@ -128,9 +173,9 @@ mod tests {
             maxed.append(12288);
         }
         let z = unpack_512(pack_512(zeros.span()).span()).unwrap();
-        assert_eq!(z.span(), zeros.span());
+        assert_eq!(z.span(), as_felts(zeros.span()).span());
         let m = unpack_512(pack_512(maxed.span()).span()).unwrap();
-        assert_eq!(m.span(), maxed.span());
+        assert_eq!(m.span(), as_felts(maxed.span()).span());
     }
 
     #[test]

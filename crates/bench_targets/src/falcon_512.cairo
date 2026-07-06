@@ -7,14 +7,13 @@
 //! salt). Reading the packed key back is part of the measured validation cost.
 //!
 //! The SHAKE and Poseidon accounts both reuse the 60-felt hint layout, differing only in
-//! the hash-to-point: SHAKE-256's pure-Cairo Keccak pushes its validation past the step
-//! cap (a benchmark target, not deployable), whereas the native-Poseidon variant stays
-//! well within the cap.
+//! the hash-to-point: SHAKE-256's pure-Cairo Keccak-f[1600] dominates its validation cost
+//! (still within both validation caps), while the native-Poseidon variant is the cheapest
+//! of the accounts.
 
 #[starknet::contract]
 pub mod Falcon512Account {
     use pqbench_falcon_512::Falcon512Verifier;
-    use pqbench_interface::PqSignatureVerifier;
     use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
     use crate::IValidateBench;
 
@@ -53,7 +52,6 @@ pub mod Falcon512Account {
 #[starknet::contract]
 pub mod Falcon512DirectAccount {
     use pqbench_falcon_512::Falcon512DirectVerifier;
-    use pqbench_interface::PqSignatureVerifier;
     use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
     use crate::IValidateBench;
 
@@ -92,7 +90,6 @@ pub mod Falcon512DirectAccount {
 #[starknet::contract]
 pub mod Falcon512ShakeAccount {
     use pqbench_falcon_512::Falcon512ShakeVerifier;
-    use pqbench_interface::PqSignatureVerifier;
     use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
     use crate::IValidateBench;
 
@@ -131,7 +128,6 @@ pub mod Falcon512ShakeAccount {
 #[starknet::contract]
 pub mod Falcon512PoseidonAccount {
     use pqbench_falcon_512::Falcon512PoseidonVerifier;
-    use pqbench_interface::PqSignatureVerifier;
     use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
     use crate::IValidateBench;
 

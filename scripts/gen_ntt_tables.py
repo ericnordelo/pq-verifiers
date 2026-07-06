@@ -48,6 +48,7 @@ ROOTS_LOCATIONS = [
     REPO / "crates/falcon_512/src/ntt_constants.cairo",
 ]
 SCALED_OUT = REPO / "crates/ntt/src/roots_scaled.cairo"
+FELT_OUT = REPO / "crates/ntt/src/roots_felt.cairo"
 BITREV_OUT = REPO / "crates/ntt/src/bitrev.cairo"
 
 FWD_NAME = {n: f"phi{2 * n}_roots_zq" for n in ALL_SIZES}
@@ -129,7 +130,9 @@ class Stats:
         self.max_value = max(self.max_value, max(values))
 
 
-def ntt_iter(f, tables, stats=None):
+def ntt_iter_lazy(f, tables, stats=None):
+    """The engine's `ntt_lazy`: the iterative forward transform WITHOUT its final
+    reduction pass. Returns `(values, bits, bound)` exactly as the Cairo engine does."""
     n = len(f)
     stats = stats or Stats()
     perm = bitrev_perm(n)
@@ -157,18 +160,26 @@ def ntt_iter(f, tables, stats=None):
         bound *= Q + 1
         bits += FWD_GROWTH_BITS
         h, level = 2 * h, level + 1
+    return cur, bits, bound
+
+
+def ntt_iter(f, tables, stats=None):
+    stats = stats or Stats()
+    cur, _, _ = ntt_iter_lazy(f, tables, stats)
     stats.reduce_passes += 1
     return [v % Q for v in cur]
 
 
-def intt_iter(f_ntt, tables, input_bits=QBITS, stats=None):
+def intt_iter(f_ntt, tables, input_bits=QBITS, input_bound=None, stats=None):
     n = len(f_ntt)
     stats = stats or Stats()
     scaled = scaled_inv_tables(tables)
     sizes = [s for s in ALL_SIZES if s <= n]
     cur = list(f_ntt)
     bits = input_bits
-    bound = Q**2 if input_bits == PRODUCT_BITS else Q
+    if input_bound is None:
+        input_bound = Q**2 if input_bits == PRODUCT_BITS else Q
+    bound = input_bound
     h, level = n // 2, len(sizes) - 1
     while True:
         if bits + INV_GROWTH_BITS > THRESHOLD:
@@ -250,6 +261,35 @@ def check_lazy_product_path(tables):
     assert stats.max_value < 2**THRESHOLD
 
 
+def check_lazy_forward(tables):
+    """The engine's `ntt_lazy` contract: unreduced outputs match the reference mod q,
+    respect the reported exact bound, and feed the direct-variant pipeline (products
+    of a lazy transform against a reduced one, then INTT under the lazy bound)."""
+    rng = random.Random(929)
+    stats = Stats()
+    for n in DEGREES:
+        for f in ([Q - 1] * n, [rng.randrange(Q) for _ in range(n)]):
+            expect = ntt_rec(f, tables)
+            lazy, bits, bound = ntt_iter_lazy(f, tables, stats)
+            assert [v % Q for v in lazy] == expect, f"n={n}: lazy fwd != reference mod q"
+            assert all(v < bound for v in lazy), f"n={n}: lazy output >= reported bound"
+            assert bound <= 2**bits <= 2**THRESHOLD, f"n={n}: lazy bits/bound inconsistent"
+
+            g = [rng.randrange(Q) for _ in range(n)]
+            g_ntt = ntt_rec(g, tables)
+            products = [x * y for x, y in zip(lazy, g_ntt)]
+            expect_fg = intt_rec([p % Q for p in products], tables)
+            got = intt_iter(
+                products, tables, input_bits=bits + QBITS, input_bound=bound * Q, stats=stats
+            )
+            assert got == expect_fg, f"n={n}: lazy-forward product pipeline mismatch"
+    print(
+        f"ok: lazy forward (no final pass) matches mod q, bounds hold, and the "
+        f"product pipeline agrees (max intermediate 2^{stats.max_value.bit_length()})"
+    )
+    assert stats.max_value < 2**THRESHOLD
+
+
 def check_negacyclic(tables):
     """x * x^511 = x^512 = -1 mod (x^512 + 1): full lazy pipeline check."""
     n = 512
@@ -262,18 +302,25 @@ def check_negacyclic(tables):
 
 
 def check_schedule(tables):
-    """The documented cost claim: at most 2 reduction passes per transform."""
+    """The documented cost claim: at most 2 reduction passes per transform, and a
+    single pass for the lazy forward."""
     f = [Q - 1] * 512
     s = Stats()
     ntt_iter(f, tables, s)
     assert s.reduce_passes == 2, f"fwd reduce passes = {s.reduce_passes}, expected 2"
+    s = Stats()
+    ntt_iter_lazy(f, tables, s)
+    assert s.reduce_passes == 1, f"lazy fwd reduce passes = {s.reduce_passes}, expected 1"
     s = Stats()
     intt_iter([Q - 1] * 512, tables, stats=s)
     assert s.reduce_passes == 2, f"intt reduce passes = {s.reduce_passes}, expected 2"
     s = Stats()
     intt_iter([(Q - 1) ** 2] * 512, tables, input_bits=PRODUCT_BITS, stats=s)
     assert s.reduce_passes == 2, f"lazy intt reduce passes = {s.reduce_passes}"
-    print("ok: reduction schedule = 2 passes per 512-point transform (incl. final)")
+    print(
+        "ok: reduction schedule = 2 passes per 512-point transform "
+        "(1 for the lazy forward)"
+    )
 
 
 # --- Emission ---
@@ -285,9 +332,20 @@ HEADER = """\
 """
 
 
-def fmt_table(name, values):
+def fmt_table(name, values, ty="u16"):
     body = ", ".join(str(v) for v in values)
-    return f"const {name}: [u16; {len(values)}] = [{body}];\n"
+    return f"const {name}: [{ty}; {len(values)}] = [{body}];\n"
+
+
+def emit_dispatch(out, fn_name, doc, names):
+    out.append(f"\n{doc}pub fn {fn_name}(degree: u32) -> Span<felt252> {{\n")
+    branches = []
+    for n in ALL_SIZES:
+        branches.append(f"    if degree == {n} {{\n        {names[n]}.span()\n    }}")
+    out.append(
+        " else ".join(branches)
+        + " else {\n        panic!(\"no root table for degree\")\n    }\n}\n"
+    )
 
 
 def emit_scaled(tables):
@@ -297,7 +355,7 @@ def emit_scaled(tables):
             what=(
                 "Inverse merge-root tables prescaled by I2 = 2^-1 mod q\n"
                 "// (tinv[i] = I2 * root_inv[i] mod q), derived from roots.cairo; the\n"
-                "// split levels of the INTT consume them as single multipliers."
+                "// split levels of the INTT consume them as single felt252 multipliers."
             )
         ),
         "\n//! I2-scaled inverse NTT root tables (generated).\n\n",
@@ -305,21 +363,42 @@ def emit_scaled(tables):
     names = {}
     for n in ALL_SIZES:
         names[n] = f"phi{2 * n}_roots_zq_inv_scaled"
-        out.append(fmt_table(names[n], scaled[n]))
-    out.append(
-        "\n/// I2-prescaled inverse roots for the split level of the given degree\n"
-        "/// (the output size of the merge it inverts).\n"
-        "pub fn get_scaled_inv_roots(degree: u32) -> Span<u16> {\n"
-    )
-    branches = []
-    for n in ALL_SIZES:
-        branches.append(f"    if degree == {n} {{\n        {names[n]}.span()\n    }}")
-    out.append(
-        " else ".join(branches)
-        + " else {\n        panic!(\"no scaled inverse roots for degree\")\n    }\n}\n"
+        out.append(fmt_table(names[n], scaled[n], ty="felt252"))
+    emit_dispatch(
+        out,
+        "get_scaled_inv_roots",
+        "/// I2-prescaled inverse roots for the split level of the given degree\n"
+        "/// (the output size of the merge it inverts).\n",
+        names,
     )
     SCALED_OUT.write_text("".join(out))
     print(f"wrote {SCALED_OUT.relative_to(REPO)}")
+
+
+def emit_felt_roots(tables):
+    out = [
+        HEADER.format(
+            what=(
+                "Forward merge-root tables as felt252 constants, value-identical to the\n"
+                "// u16 tables in roots.cairo; the engine multiplies roots into felt252\n"
+                "// butterflies, so the constants are stored ready to consume."
+            )
+        ),
+        "\n//! Forward NTT root tables as felts (generated).\n\n",
+    ]
+    names = {}
+    for n in ALL_SIZES:
+        names[n] = f"phi{2 * n}_roots_zq_felt"
+        out.append(fmt_table(names[n], tables[FWD_NAME[n]], ty="felt252"))
+    emit_dispatch(
+        out,
+        "get_even_roots_felt",
+        "/// Forward merge roots for the given degree, as felts (the values of\n"
+        "/// `roots::get_even_roots`).\n",
+        names,
+    )
+    FELT_OUT.write_text("".join(out))
+    print(f"wrote {FELT_OUT.relative_to(REPO)}")
 
 
 def emit_bitrev():
@@ -356,11 +435,13 @@ def main():
 
     check_equivalence(tables)
     check_lazy_product_path(tables)
+    check_lazy_forward(tables)
     check_negacyclic(tables)
     check_schedule(tables)
 
     if args.emit:
         emit_scaled(tables)
+        emit_felt_roots(tables)
         emit_bitrev()
     print("all checks passed")
 

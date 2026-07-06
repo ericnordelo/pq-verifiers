@@ -34,7 +34,11 @@
 //! maps every coefficient to `[0, q)` via u128 divmod. Since all intermediates stay
 //! below 2^126 < P/2^125, felt252 arithmetic never wraps and every reduction input
 //! fits u128. For q = 12289 this schedule costs exactly TWO passes per 512-point
-//! transform. `scripts/gen_ntt_tables.py` mirrors this arithmetic op-for-op in Python
+//! transform. [`ntt_lazy`] additionally exposes the transform WITHOUT its final
+//! reduction pass, returning the tracked `(bits, bound)` alongside the unreduced
+//! values, so callers whose follow-up arithmetic tolerates the bound (a divisibility
+//! check, a lazy-product INTT) can skip that pass entirely.
+//! `scripts/gen_ntt_tables.py` mirrors this arithmetic op-for-op in Python
 //! and proves it equal to the recursive reference on random and adversarial inputs
 //! (including all-(q-1), where the max intermediate is 2^123).
 
@@ -179,6 +183,24 @@ fn merge_level(
 /// Forward NTT. `f` must hold `cfg.n` coefficients in `[0, q)`. Returns the transform
 /// in the parameter set's evaluation order, reduced to `[0, q)`.
 pub fn ntt(f: Span<felt252>, cfg: @NttConfig) -> Array<felt252> {
+    let (out, _, _) = ntt_core(f, cfg);
+    reduce_pass(out.span(), *cfg.q_nz)
+}
+
+/// Forward NTT without the final reduction pass: the same transform as [`ntt`], with
+/// outputs returned as unreduced integers congruent to the reduced transform mod q.
+/// Returns `(values, bits, bound)` where `bound` is the exact exclusive upper bound on
+/// the output integers under the engine's reduction schedule and `bits` its
+/// conservative bit size. Callers fold the bound into their own arithmetic (e.g. a
+/// divisibility check or a lazy-product INTT) instead of paying a full reduction pass.
+pub fn ntt_lazy(f: Span<felt252>, cfg: @NttConfig) -> (Array<felt252>, u32, felt252) {
+    ntt_core(f, cfg)
+}
+
+/// The merge levels shared by [`ntt`] and [`ntt_lazy`], inlined into both so neither
+/// entry point pays an extra call boundary.
+#[inline(always)]
+fn ntt_core(f: Span<felt252>, cfg: @NttConfig) -> (Array<felt252>, u32, felt252) {
     let n = *cfg.n;
     assert(f.len() == n, 'ntt: bad input length');
     let q_felt = *cfg.q_felt;
@@ -223,7 +245,7 @@ pub fn ntt(f: Span<felt252>, cfg: @NttConfig) -> Array<felt252> {
         h = 2 * h;
         level += 1;
     }
-    reduce_pass(cur.span(), q_nz)
+    (cur, bits, bound)
 }
 
 /// One generic split level: read interleaved pairs per block of size `2h`, write the

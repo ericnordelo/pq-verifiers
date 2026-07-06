@@ -14,15 +14,26 @@ pub const Q_HALF: u16 = 6144;
 /// Add two values modulo Q.
 #[inline(always)]
 pub fn add_mod(a: u16, b: u16) -> u16 {
-    // a, b < Q so a + b <= 24576 < 2^16: the checked u16 add never overflows.
-    (a + b) % Q
+    // a, b < Q so a + b <= 24576 < 2^16: the checked u16 add never overflows, and a
+    // single conditional subtraction reduces the sum.
+    let d = a + b;
+    if d >= Q {
+        d - Q
+    } else {
+        d
+    }
 }
 
-/// Subtract two values modulo Q, via (a + Q - b) mod Q.
+/// Subtract two values modulo Q, via a + Q - b and one conditional subtraction.
 #[inline(always)]
 pub fn sub_mod(a: u16, b: u16) -> u16 {
-    // a < Q so a + Q <= 24577 < 2^16.
-    (a + Q - b) % Q
+    // a < Q so a + Q <= 24577 < 2^16; a + Q - b is in [1, 2Q-1].
+    let d = a + Q - b;
+    if d >= Q {
+        d - Q
+    } else {
+        d
+    }
 }
 
 /// Multiply two values modulo Q.

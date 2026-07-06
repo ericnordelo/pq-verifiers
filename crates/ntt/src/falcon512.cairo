@@ -4,7 +4,7 @@
 
 use crate::bitrev::bitrev_512;
 use crate::engine::NttConfig;
-use crate::roots::get_even_roots;
+use crate::roots_felt::get_even_roots_felt;
 use crate::roots_scaled::get_scaled_inv_roots;
 
 /// The Falcon modulus q = 12289 = 12·1024 + 1.
@@ -47,13 +47,14 @@ pub fn config_for_degree(n: u32, levels: u32) -> NttConfig {
 }
 
 fn config_with_perm(n: u32, levels: u32, perm: Span<u16>) -> NttConfig {
-    // Root tables as felts, one per level: level ℓ merges into size 2^(ℓ+1).
+    // Root-table spans, one per level: level ℓ merges into size 2^(ℓ+1). The tables
+    // are stored as felt252 constants (generated), so no per-call conversion runs.
     let mut merge_roots: Array<Span<felt252>> = array![];
     let mut split_scaled: Array<Span<felt252>> = array![];
     let mut size: u32 = 2;
     loop {
-        merge_roots.append(to_felts(get_even_roots(size)));
-        split_scaled.append(to_felts(get_scaled_inv_roots(size)));
+        merge_roots.append(get_even_roots_felt(size));
+        split_scaled.append(get_scaled_inv_roots(size));
         if size == n {
             break;
         }
@@ -76,10 +77,3 @@ fn config_with_perm(n: u32, levels: u32, perm: Span<u16>) -> NttConfig {
     }
 }
 
-fn to_felts(mut vals: Span<u16>) -> Span<felt252> {
-    let mut out: Array<felt252> = array![];
-    while let Some(v) = vals.pop_front() {
-        out.append((*v).into());
-    }
-    out.span()
-}

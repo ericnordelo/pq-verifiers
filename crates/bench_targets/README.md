@@ -26,13 +26,14 @@ src/
 ## Current efficiency
 
 One row per verifier account. The 100M-L2-gas / 1M-step validation cap is the deployability
-threshold; `Falcon512ShakeAccount` exceeds it (pure-Cairo SHAKE-256 hash-to-point) and is a
-benchmark target, not a deployable account. The others fit with wide margin.
+threshold, and every account fits it: the BLAKE2s, direct, and Poseidon Falcon accounts with
+wide margin, and `Falcon512ShakeAccount` — whose pure-Cairo SHAKE-256 hash-to-point dominates
+its cost — at about two-thirds of the gas cap and under half the step cap.
 
 | Account | Measurement | L2 gas | Steps |
 |---|---|--:|--:|
 | `EcdsaStarkAccount` | inside `__validate__` | 160,795 | 1,437 |
-| `Falcon512Account` (hint) | inside `__validate__` | 37,213,800 | 337,228 |
-| `Falcon512DirectAccount` (direct) | inside `__validate__` | 38,710,030 | 354,481 |
-| `Falcon512PoseidonAccount` (Poseidon) | inside `__validate__` | 38,455,509 | 348,643 |
-| `Falcon512ShakeAccount` (SHAKE-256) | inside `__validate__` | 204,098,345 | 1,627,331 |
+| `Falcon512Account` (hint) | inside `__validate__` | 28,181,860 | 254,065 |
+| `Falcon512DirectAccount` (direct) | inside `__validate__` | 32,637,610 | 298,618 |
+| `Falcon512PoseidonAccount` (Poseidon) | inside `__validate__` | 28,059,129 | 251,731 |
+| `Falcon512ShakeAccount` (SHAKE-256) | inside `__validate__` | 65,535,198 | 462,088 |

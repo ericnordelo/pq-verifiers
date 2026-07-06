@@ -27,7 +27,7 @@
 
 use core::blake::{blake2s_compress, blake2s_finalize};
 use core::poseidon::hades_permutation;
-use super::shake256::shake256;
+use super::shake256::keccak_f1600;
 
 /// blake2s-256 initial state: the BLAKE2s IV with the standard parameter word
 /// (digest_length = 32, key = 0, fanout = 1, depth = 1) XORed into h[0].
@@ -112,9 +112,10 @@ fn push_candidate(candidate: u32, q32: NonZero<u32>, ref coeffs: Array<u16>) {
 /// standards-compliant Falcon signer (e.g. falcon.py). The message hash is absorbed as
 /// its 32 little-endian bytes, the salt as its two 20-byte little-endian halves.
 ///
-/// SHAKE-256 candidate bytes to squeeze: 768 words, ample margin over the ~546 expected
-/// to yield 512 accepted coefficients (acceptance rate 5Q/2^16 ≈ 0.938).
-const H2P_SHAKE_OUT_BYTES: u32 = 1536;
+/// The sponge is driven directly on the Keccak lanes: the 72-byte input fits a single
+/// rate block whose padded lanes are assembled straight from the salt and message-hash
+/// limbs, and squeezing reads candidate words from the 17 rate lanes in place
+/// ([`push_lane_words`]), permuting again only while more candidates are needed.
 
 /// Hash `(message_hash, salt)` to 512 coefficients in `[0, Q)` with the standard
 /// SHAKE-256 construction. Returns `None` if either salt felt exceeds 20 bytes.
@@ -126,24 +127,67 @@ pub fn hash_to_point_shake_512(
     if sa >= TWO_POW_160 || sb >= TWO_POW_160 {
         return None;
     }
-    // Absorb salt (40 bytes, two 20-byte halves) then the 32-byte message hash.
-    let mut input: Array<u8> = array![];
-    append_le_bytes(ref input, salt_a, 20);
-    append_le_bytes(ref input, salt_b, 20);
-    append_le_bytes(ref input, message_hash, 32);
-    let stream = shake256(input, H2P_SHAKE_OUT_BYTES);
+    let mh: u256 = message_hash.into();
+
+    // The absorbed block, assembled directly as little-endian lanes: bytes 0..40 hold
+    // the salt, 40..72 the message hash, byte 72 the 0x1F SHAKE domain byte, and byte
+    // 135 the pad10*1 terminator. The sponge state starts at zero, so this first
+    // (and only) absorbed block IS the pre-permutation state.
+    let two64: NonZero<u128> = 0x10000000000000000_u128.try_into().unwrap();
+    let two32: NonZero<u128> = 0x100000000_u128.try_into().unwrap();
+    let (a1, a0) = DivRem::div_rem(sa.low, two64); // salt_a bytes 0..8 and 8..16
+    let (sbq, sb0) = DivRem::div_rem(sb.low, two32); // salt_b bytes 0..4 and 4..16
+    let (sb12, l3) = DivRem::div_rem(sbq, two64); // salt_b bytes 4..12 -> lane 3
+    let (m1, m0) = DivRem::div_rem(mh.low, two64);
+    let (m3, m2) = DivRem::div_rem(mh.high, two64);
+    // Lane 2: salt_a bytes 16..20 in the low half, salt_b bytes 0..4 in the high half.
+    let l2: u128 = (sa.high.into() + sb0.into() * 0x100000000).try_into().unwrap();
+    // Lane 4: salt_b bytes 12..16 in the low half, salt_b bytes 16..20 in the high half.
+    let l4: u128 = (sb12.into() + sb.high.into() * 0x100000000).try_into().unwrap();
+
+    let mut state = keccak_f1600(
+        [
+            a0, a1, l2, l3, l4, m0, m1, m2, m3, 0x1f, 0, 0, 0, 0, 0, 0, 0x8000000000000000, 0, 0, 0,
+            0, 0, 0, 0, 0,
+        ],
+    );
 
     let q32: NonZero<u32> = 12289_u32.try_into().unwrap();
+    let two16: NonZero<u64> = 0x10000_u64.try_into().unwrap();
+    let b256: NonZero<u64> = 0x100_u64.try_into().unwrap();
     let mut coeffs: Array<u16> = array![];
-    let mut b: u32 = 0;
-    while coeffs.len() != 512 {
-        // Big-endian 16-bit candidate word.
-        let hi: u32 = (*stream.at(b)).into();
-        let lo: u32 = (*stream.at(b + 1)).into();
-        push_candidate(hi * 256 + lo, q32, ref coeffs);
-        b += 2;
+    loop {
+        let mut lanes = state.span().slice(0, 17);
+        while let Some(lane) = lanes.pop_front() {
+            push_lane_words(*lane, two16, b256, q32, ref coeffs);
+        }
+        if coeffs.len() == 512 {
+            break;
+        }
+        state = keccak_f1600(state);
     }
     Some(coeffs)
+}
+
+/// Read one squeezed rate lane (< 2^64) as four big-endian 16-bit candidate words. The
+/// lane's bytes are little-endian, so each 16-bit chunk holds its stream word
+/// byte-swapped: chunk = b0 + 256*b1 for the stream word 256*b0 + b1.
+#[inline(always)]
+fn push_lane_words(
+    lane: u128, two16: NonZero<u64>, b256: NonZero<u64>, q32: NonZero<u32>, ref coeffs: Array<u16>,
+) {
+    let lane64: u64 = lane.try_into().unwrap();
+    let (rest, c0) = DivRem::div_rem(lane64, two16);
+    let (rest, c1) = DivRem::div_rem(rest, two16);
+    let (c3, c2) = DivRem::div_rem(rest, two16);
+    let (b1, b0) = DivRem::div_rem(c0, b256);
+    push_candidate((b0 * 256 + b1).try_into().unwrap(), q32, ref coeffs);
+    let (b1, b0) = DivRem::div_rem(c1, b256);
+    push_candidate((b0 * 256 + b1).try_into().unwrap(), q32, ref coeffs);
+    let (b1, b0) = DivRem::div_rem(c2, b256);
+    push_candidate((b0 * 256 + b1).try_into().unwrap(), q32, ref coeffs);
+    let (b1, b0) = DivRem::div_rem(c3, b256);
+    push_candidate((b0 * 256 + b1).try_into().unwrap(), q32, ref coeffs);
 }
 
 /// ## Poseidon backend
@@ -172,12 +216,14 @@ pub fn hash_to_point_poseidon_512(
         return None;
     }
     let q32: NonZero<u32> = 12289_u32.try_into().unwrap();
+    let two64: NonZero<u128> = 0x10000000000000000_u128.try_into().unwrap();
+    let two16: NonZero<u64> = 0x10000_u64.try_into().unwrap();
     // Absorb the three inputs, then squeeze the rate elements two felts at a time.
     let (mut s0, mut s1, mut s2) = hades_permutation(salt_a, salt_b, message_hash);
     let mut coeffs: Array<u16> = array![];
     while coeffs.len() != 512 {
-        push_felt_words(s0, q32, ref coeffs);
-        push_felt_words(s1, q32, ref coeffs);
+        push_felt_words(s0, two64, two16, q32, ref coeffs);
+        push_felt_words(s1, two64, two16, q32, ref coeffs);
         if coeffs.len() == 512 {
             break;
         }
@@ -189,38 +235,46 @@ pub fn hash_to_point_poseidon_512(
     Some(coeffs)
 }
 
-/// Read the low 240 bits of `felt` as 15 little-endian 16-bit candidate words — 8 from the
-/// low 128-bit half and 7 from the high half. Working on the two `u128` halves keeps each
-/// word a `u128` division (cheaper than dividing the full `u256`).
-fn push_felt_words(felt: felt252, q32: NonZero<u32>, ref coeffs: Array<u16>) {
+/// Read the low 240 bits of `felt` as 15 little-endian 16-bit candidate words — 8 from
+/// the low 128-bit half and 7 from the high half. Each half is first split into 64-bit
+/// legs so the per-word divisions run at u64 width.
+fn push_felt_words(
+    felt: felt252,
+    two64: NonZero<u128>,
+    two16: NonZero<u64>,
+    q32: NonZero<u32>,
+    ref coeffs: Array<u16>,
+) {
     let v: u256 = felt.into();
-    push_half_words(v.low, 8, q32, ref coeffs);
-    push_half_words(v.high, 7, q32, ref coeffs);
+    let (lo_hi, lo_lo) = DivRem::div_rem(v.low, two64);
+    push_leg_words4(lo_lo.try_into().unwrap(), two16, q32, ref coeffs);
+    push_leg_words4(lo_hi.try_into().unwrap(), two16, q32, ref coeffs);
+    let (hi_hi, hi_lo) = DivRem::div_rem(v.high, two64);
+    push_leg_words4(hi_lo.try_into().unwrap(), two16, q32, ref coeffs);
+    push_leg_words3(hi_hi.try_into().unwrap(), two16, q32, ref coeffs);
 }
 
-/// Feed the low `count` 16-bit words of a `u128` half as rejection-sampled candidates.
-fn push_half_words(mut half: u128, count: u32, q32: NonZero<u32>, ref coeffs: Array<u16>) {
-    let two16: NonZero<u128> = 0x10000_u128.try_into().unwrap();
-    let mut j = 0;
-    while j != count {
-        let (q, r) = DivRem::div_rem(half, two16);
-        push_candidate(r.try_into().unwrap(), q32, ref coeffs);
-        half = q;
-        j += 1;
-    }
+/// Feed a 64-bit leg's four 16-bit words, low first, as rejection-sampled candidates.
+#[inline(always)]
+fn push_leg_words4(leg: u64, two16: NonZero<u64>, q32: NonZero<u32>, ref coeffs: Array<u16>) {
+    let (rest, w0) = DivRem::div_rem(leg, two16);
+    let (rest, w1) = DivRem::div_rem(rest, two16);
+    let (w3, w2) = DivRem::div_rem(rest, two16);
+    push_candidate(w0.try_into().unwrap(), q32, ref coeffs);
+    push_candidate(w1.try_into().unwrap(), q32, ref coeffs);
+    push_candidate(w2.try_into().unwrap(), q32, ref coeffs);
+    push_candidate(w3.try_into().unwrap(), q32, ref coeffs);
 }
 
-/// Append the low `n` bytes of `value`, little-endian.
-fn append_le_bytes(ref out: Array<u8>, value: felt252, n: u32) {
-    let mut v: u256 = value.into();
-    let b256: NonZero<u256> = 256_u256.try_into().unwrap();
-    let mut i = 0;
-    while i != n {
-        let (q, r) = DivRem::div_rem(v, b256);
-        out.append(r.try_into().unwrap());
-        v = q;
-        i += 1;
-    }
+/// Feed a leg's low three 16-bit words (the felt's bits 192..240), low first.
+#[inline(always)]
+fn push_leg_words3(leg: u64, two16: NonZero<u64>, q32: NonZero<u32>, ref coeffs: Array<u16>) {
+    let (rest, w0) = DivRem::div_rem(leg, two16);
+    let (rest, w1) = DivRem::div_rem(rest, two16);
+    let (_, w2) = DivRem::div_rem(rest, two16);
+    push_candidate(w0.try_into().unwrap(), q32, ref coeffs);
+    push_candidate(w1.try_into().unwrap(), q32, ref coeffs);
+    push_candidate(w2.try_into().unwrap(), q32, ref coeffs);
 }
 
 /// Little-endian u32 limbs of a u128.
