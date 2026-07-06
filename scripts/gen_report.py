@@ -264,56 +264,6 @@ def build_md(data):
     return "\n".join(lines) + "\n"
 
 
-def build_svg(data):
-    """Static, self-contained SVG summary for embedding in the README (renders on GitHub).
-
-    Inline presentation attributes only (no <style>/<script>/external fonts) and an opaque
-    light card background, so it reads correctly in both GitHub light and dark themes.
-    """
-    meta = data["metadata"]
-    schemes = data["schemes"]
-
-    def value(s):
-        return s.get("validate_l2_gas", s.get("verify_l2_gas", 0)) if s.get("measured") else 0
-
-    measured = [s for s in schemes if s.get("measured")]
-    maxv = max([value(s) for s in measured], default=1) or 1
-
-    W, top, rowh = 720, 78, 40
-    x_label, x_bar, bar_w, x_val = 24, 230, 250, 696
-    H = top + len(schemes) * rowh + 46
-    font = "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-
-    p = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" '
-         f'font-family="{font}">']
-    p.append(f'<rect x="0.5" y="0.5" width="{W - 1}" height="{H - 1}" rx="12" '
-             f'fill="#ffffff" stroke="#e3e3e3"/>')
-    p.append('<text x="24" y="34" font-size="18" font-weight="600" fill="#1a1a1a">'
-             "Post-quantum verifier benchmark — Starknet</text>")
-    p.append(f'<text x="24" y="55" font-size="12" fill="#666666">In-validate verification '
-             f"cost vs the 100M L2-gas validation cap · updated {esc(meta['generated'])}</text>")
-    y = top
-    for s in schemes:
-        p.append(f'<text x="{x_label}" y="{y + 18}" font-size="13" fill="#1a1a1a">'
-                 f"{esc(s['label'])}</text>")
-        p.append(f'<rect x="{x_bar}" y="{y + 4}" width="{bar_w}" height="20" rx="5" fill="#f0f0f0"/>')
-        if s.get("measured"):
-            v = value(s)
-            w = max(2, round(bar_w * v / maxv))
-            pct = s.get("validate_pct_of_gas_cap", s.get("pct_of_gas_cap", 0))
-            p.append(f'<rect x="{x_bar}" y="{y + 4}" width="{w}" height="20" rx="5" fill="#185FA5"/>')
-            p.append(f'<text x="{x_val}" y="{y + 18}" font-size="12" fill="#333333" '
-                     f'text-anchor="end">{v:,} L2 gas ({pct}% of cap)</text>')
-        else:
-            p.append(f'<text x="{x_bar + 10}" y="{y + 18}" font-size="12" fill="#9a9a9a">'
-                     "pending implementation</text>")
-        y += rowh
-    p.append(f'<text x="24" y="{H - 18}" font-size="11" fill="#888888">Caps: 1,000,000 steps '
-             "/ 100,000,000 L2 gas. ECDSA-STARK is a classical control, not a PQ candidate.</text>")
-    p.append("</svg>")
-    return "\n".join(p)
-
-
 def main():
     parser = argparse.ArgumentParser(description="Generate the benchmark HTML report.")
     parser.add_argument("--results", default=os.path.join(RESULTS_DIR, "results.json"))
@@ -325,11 +275,8 @@ def main():
         f.write("<!doctype html><meta charset=utf-8>\n" + build_html(data))
     with open(os.path.join(RESULTS_DIR, "summary.md"), "w") as f:
         f.write(build_md(data))
-    with open(os.path.join(RESULTS_DIR, "report.svg"), "w") as f:
-        f.write(build_svg(data))
     print(f"Wrote {os.path.join(RESULTS_DIR, 'report.html')}")
     print(f"Wrote {os.path.join(RESULTS_DIR, 'summary.md')}")
-    print(f"Wrote {os.path.join(RESULTS_DIR, 'report.svg')}")
 
 
 if __name__ == "__main__":

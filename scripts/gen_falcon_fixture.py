@@ -3,17 +3,23 @@
 
 Two hash-to-point variants, selected with --variant:
 
-  blake2s (default) -> crates/falcon_512/src/bench_fixture.cairo
+  blake2s (default) -> crates/falcon_512/src/fixtures/blake.cairo
       Non-standard BLAKE2s counter-mode hash-to-point (matching hash_to_point.cairo).
       falcon.py has no BLAKE2s mode, so the construction is reimplemented here
       (h2p_blake2s) and the reference sampler signs the resulting point.
 
-  shake -> crates/falcon_512/src/bench_fixture_shake.cairo
+  shake -> crates/falcon_512/src/fixtures/shake.cairo
       Standard SHAKE-256 hash-to-point (FIPS 206), taken directly from falcon.py's own
       __hash_to_point__: the fixture is a genuine standards-compliant Falcon signature,
       interoperable with any compliant signer. Matches hash_to_point_shake_512.
 
-Both variants use a genuine keypair (github.com/tprest/falcon.py NTRU keygen) and the
+  poseidon -> crates/falcon_512/src/fixtures/poseidon.cairo
+      Non-standard native-Poseidon squeeze (matching hash_to_point_poseidon_512). Uses a
+      small vendored Poseidon permutation (poseidon_perm) that reproduces Starknet's
+      core::poseidon exactly (checked against its known-answer vector at run time), so no
+      extra dependency is required.
+
+All variants use a genuine keypair (github.com/tprest/falcon.py NTRU keygen) and the
 reference ffSampling trapdoor sampler, and both re-check the full on-chain verification
 equation (hint product via NTT, canonical packing round-trip, centered norm <= 34034726)
 before writing.
@@ -35,8 +41,69 @@ SIG_BOUND_512 = 34034726
 MSG_LABEL = "BENCH_MSG"
 
 REPO = Path(__file__).resolve().parent.parent
-OUT_FILE = REPO / "crates/falcon_512/src/bench_fixture.cairo"
-OUT_FILE_SHAKE = REPO / "crates/falcon_512/src/bench_fixture_shake.cairo"
+OUT_FILE = REPO / "crates/falcon_512/src/fixtures/blake.cairo"
+OUT_FILE_SHAKE = REPO / "crates/falcon_512/src/fixtures/shake.cairo"
+OUT_FILE_POSEIDON = REPO / "crates/falcon_512/src/fixtures/poseidon.cairo"
+
+# Starknet Poseidon (hades_permutation over the STARK field), vendored to match
+# core::poseidon exactly: round constants are sha256("Hades"+idx), the MDS is the small
+# matrix, and the schedule is 4 full + 83 partial + 4 full rounds. Verified against the
+# corelib known-answer vector in main(). Vendored (rather than imported) so the generator
+# needs no cairo-lang dependency; the on-chain side uses the native builtin.
+POSEIDON_PRIME = 2**251 + 17 * 2**192 + 1
+POSEIDON_MDS = ((3, 1, 1), (1, -1, 1), (1, 1, -2))
+POSEIDON_R_F, POSEIDON_R_P = 8, 83
+POSEIDON_WORDS_PER_FELT = 15  # must match hash_to_point.cairo
+
+
+def _hades_ark(idx: int) -> int:
+    return int(hashlib.sha256(f"Hades{idx}".encode()).hexdigest(), 16) % POSEIDON_PRIME
+
+
+def poseidon_perm(s0: int, s1: int, s2: int) -> tuple:
+    """Starknet hades_permutation on 3 field elements; matches core::poseidon."""
+    st = [s0 % POSEIDON_PRIME, s1 % POSEIDON_PRIME, s2 % POSEIDON_PRIME]
+
+    def rnd(st: list, ridx: int, full: bool) -> list:
+        st = [(st[j] + _hades_ark(3 * ridx + j)) % POSEIDON_PRIME for j in range(3)]
+        if full:
+            st = [pow(x, 3, POSEIDON_PRIME) for x in st]
+        else:
+            st[2] = pow(st[2], 3, POSEIDON_PRIME)
+        return [sum(POSEIDON_MDS[i][k] * st[k] for k in range(3)) % POSEIDON_PRIME
+                for i in range(3)]
+
+    ridx = 0
+    for _ in range(POSEIDON_R_F // 2):
+        st = rnd(st, ridx, True)
+        ridx += 1
+    for _ in range(POSEIDON_R_P):
+        st = rnd(st, ridx, False)
+        ridx += 1
+    for _ in range(POSEIDON_R_F // 2):
+        st = rnd(st, ridx, True)
+        ridx += 1
+    return st[0], st[1], st[2]
+
+
+def h2p_poseidon(message_hash: int, salt_a: int, salt_b: int, n: int = 512) -> list:
+    """Poseidon-squeeze hash-to-point; must match hash_to_point_poseidon_512 exactly.
+
+    Absorb (salt_a, salt_b, message_hash) with one permutation, then squeeze the two rate
+    elements (s0, s1) 15 low 16-bit words at a time, permuting between blocks.
+    """
+    s0, s1, s2 = poseidon_perm(salt_a, salt_b, message_hash)
+    out: list = []
+    while len(out) < n:
+        for felt in (s0, s1):
+            for j in range(POSEIDON_WORDS_PER_FELT):
+                if len(out) < n:
+                    word = (felt >> (16 * j)) & 0xFFFF
+                    if word < 5 * Q:
+                        out.append(word % Q)
+        if len(out) < n:
+            s0, s1, s2 = poseidon_perm(s0, s1, s2)
+    return out
 
 
 def h2p_blake2s(message_hash: int, salt: bytes, n: int = 512) -> list[int]:
@@ -169,8 +236,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--falcon-py", type=Path, required=True,
                         help="path to a github.com/tprest/falcon.py clone")
-    parser.add_argument("--variant", choices=("blake2s", "shake"), default="blake2s",
-                        help="hash-to-point construction (default: blake2s)")
+    parser.add_argument("--variant", choices=("blake2s", "shake", "poseidon"),
+                        default="blake2s", help="hash-to-point construction (default: blake2s)")
     parser.add_argument("--out", type=Path, default=None,
                         help="output path (defaults to the variant's bench fixture)")
     args = parser.parse_args()
@@ -210,6 +277,26 @@ def main() -> None:
             "//! own __hash_to_point__ (matching `hash_to_point_shake_512`).\n"
             f"//! salt = 0x{salt.hex()}."
         )
+    elif args.variant == "poseidon":
+        salt_a = int.from_bytes(salt[:20], "little")
+        salt_b = int.from_bytes(salt[20:], "little")
+        # Sanity: the vendored permutation reproduces core::poseidon's KAT vector.
+        assert poseidon_perm(1, 2, 3)[0] == (
+            0xfa8c9b6742b6176139365833d001e30e932a9bf7456d009b1b174f36d558c5
+        ), "vendored poseidon_perm does not match core::poseidon"
+        point = h2p_poseidon(message_hash, salt_a, salt_b)
+        out_path = args.out or OUT_FILE_POSEIDON
+        header = (
+            "//! GENERATED by `scripts/gen_falcon_fixture.py --variant poseidon` "
+            "— do not edit by hand.\n"
+            "//!\n"
+            "//! Falcon-512 bench fixture with the native-POSEIDON hash-to-point:\n"
+            "//! a genuine keypair (tprest/falcon.py NTRU keygen) and signature over "
+            f"'{MSG_LABEL}' from the\n"
+            "//! reference ffSampling sampler, with a Poseidon squeeze "
+            "(matching `hash_to_point_poseidon_512`).\n"
+            f"//! salt = 0x{salt.hex()}."
+        )
     else:
         point = h2p_blake2s(message_hash, salt)
         out_path = args.out or OUT_FILE
@@ -220,7 +307,7 @@ def main() -> None:
             "NTRU keygen)\n"
             f"//! and signature over '{MSG_LABEL}' from the reference ffSampling sampler, "
             "with the\n"
-            "//! BLAKE2s hash-to-point of `hash_to_point.cairo`.\n"
+            "//! BLAKE2s hash-to-point (matching `hash_to_point_512`).\n"
             f"//! salt = 0x{salt.hex()}."
         )
 

@@ -77,6 +77,25 @@
       "notes": "Standards-compliant hash-to-point: SHAKE-256 exactly per the Falcon spec, so signatures interoperate with any compliant signer (e.g. falcon.py) without a custom XOF. Same hint-based verify as falcon_512. On-chain cost is dominated by a pure-Cairo Keccak-f[1600] SHAKE-256; validation exceeds the step cap, so this is a benchmark target rather than a deployable account. A native keccak_f1600 syscall (SNIP-32) would collapse the hash cost and make it viable."
     },
     {
+      "key": "falcon_512_poseidon",
+      "label": "Falcon-512 Poseidon (native)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_poseidon",
+      "baseline_test": "bench_baseline_falcon_512_poseidon",
+      "validate_test": "bench_validate_falcon_512_poseidon",
+      "validate_baseline_test": "bench_validate_base_falcon_512_poseidon",
+      "contract": "Falcon512PoseidonAccount",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); non-standard Poseidon hash-to-point",
+      "on_chain_hash": "Poseidon hash-to-point (on-chain, native hades_permutation squeeze)",
+      "offchain_prep": "signer supplies mul hint (s1*h mod q; +29 sig felts)",
+      "sig_felts": 60,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "Message-binding hash-to-point built on the native Poseidon builtin (hades_permutation squeeze), reusing the falcon_512 hint verify. On-chain cost is comparable to the BLAKE2s variant and ~5.5x cheaper than the standard SHAKE-256, and it fits the validation cap with wide margin. Being native field arithmetic it is also the most STARK-proving-friendly hash-to-point. Non-standard, so it needs a matching signer (a vendored Poseidon permutation in gen_falcon_fixture.py, checked against the corelib KAT)."
+    },
+    {
       "key": "ml_dsa_44",
       "label": "ML-DSA-44 (Dilithium)",
       "family": "lattice (module)",

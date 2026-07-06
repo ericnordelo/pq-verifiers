@@ -1,6 +1,6 @@
 # Poseidon-WOTS+ verifier
 
-**Scheme:** hash-based (WOTS+ / Merkle) instantiated with Poseidon — **non-standard**.
+**Scheme:** hash-based (WOTS+ / Merkle) instantiated with Poseidon, **non-standard**.
 **Status:** stub (pending implementation).
 
 A post-quantum candidate that verifies using only hashing, which is cheap on Starknet

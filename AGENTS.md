@@ -17,7 +17,7 @@ a standalone project and must read as one.
 crates/
   bench_interface/      # the PqSignatureVerifier trait + validation-cap constants
   ecdsa_stark/          # verifier crate: classical control (cost reference, not PQ)
-  falcon_512/           # verifier crate: Falcon-512, hint + direct variants
+  falcon_512/           # verifier crate: Falcon-512 — BLAKE2s hint+direct, SHAKE-256, Poseidon
   ml_dsa_44/            # verifier crate: stub
   poseidon_wots/        # verifier crate: stub
   ntt/                  # component crate: shared lazy-reduction NTT engine
@@ -25,11 +25,11 @@ crates/
 scripts/
   run_bench.py          # measures every schemes.json pair -> results/results.json
   profile.py            # cairo-profiler step attribution -> augments results.json
-  gen_report.py         # results.json -> results/report.{html,svg} + summary.md
+  gen_report.py         # results.json -> results/report.html + summary.md
   check_efficiency.py   # the efficiency ratchet gate (make check-eff / make ratchet)
   gen_ntt_tables.py     # proves the NTT engine model + emits its generated tables
   verify_ntt_constants.py  # re-derives the NTT root tables from first principles
-  gen_falcon_fixture.py # generates the genuine Falcon fixtures (BLAKE2s + --variant shake)
+  gen_falcon_fixture.py # generates the genuine Falcon fixtures (BLAKE2s + --variant shake|poseidon)
 schemes.json            # scheme registry: one entry per verifier variant
 efficiency_baseline.json  # the ratchet: pinned L2 gas + steps per benchmark pair
 results/                # generated snapshot (never hand-edited)
@@ -77,8 +77,9 @@ A change is complete only when everything it invalidates is regenerated in the s
 | `pq-accounts` account contracts, CLI, or signers | re-check every command and layout reference in `pq-accounts/USAGE.md` and update as needed |
 
 Generated files are never hand-edited: `results/*`, `crates/ntt/src/roots_scaled.cairo`,
-`crates/ntt/src/bitrev.cairo`, `crates/falcon_512/src/bench_fixture.cairo`,
-`crates/falcon_512/src/bench_fixture_shake.cairo`. Regenerate via the owning script.
+`crates/ntt/src/bitrev.cairo`, `crates/falcon_512/src/fixtures/blake.cairo`,
+`crates/falcon_512/src/fixtures/shake.cairo`, `crates/falcon_512/src/fixtures/poseidon.cairo`.
+Regenerate via the owning script.
 
 ## Performance: every public API is regression-checked
 
@@ -106,8 +107,7 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
   explain how the code differs from a previous version, another PR, an upstream variant,
   or a rejected alternative ("previously...", "instead of the old...", "unlike PR #N",
   "was X gas"). Those comparisons describe code that does not exist here and go stale
-  silently; they belong in commit messages, PR descriptions, or `PORTING.md` (the
-  provenance/decision log), not in code.
+  silently; they belong in commit messages or PR descriptions, not in code.
 - **Measured numbers do not belong in code comments.** Costs live in
   `efficiency_baseline.json` and `results/`; READMEs may quote the current snapshot.
   Comments may state structural facts ("at most two reduction passes per transform"),
@@ -116,9 +116,9 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
   `SPDX-FileCopyrightText` / `SPDX-License-Identifier` blocks and no "ported from"
   header comments — not for original code and not for ported code. The repository
   `LICENSE` covers the project and carries the third-party notices that license
-  compliance requires; per-file provenance (upstream repos, commits, decisions) lives
-  in `PORTING.md`. A file starts directly with its `//!` module doc, which describes
-  what the module does in present terms.
+  compliance requires; upstream provenance and design decisions belong in commit
+  messages and PR descriptions. A file starts directly with its `//!` module doc, which
+  describes what the module does in present terms.
 - Design rationale is welcome when it explains the current design on its own terms
   (e.g. why lazy reduction is sound, why an offset is a multiple of q) — the test is
   whether the comment still reads true to someone who has never seen any other version.
@@ -168,7 +168,7 @@ Efficiency is a **one-way ratchet**, and it covers the public surface:
    both **L2 gas and Cairo steps** (the values in `efficiency_baseline.json`). Stub
    crates state that no measurements exist yet instead of a table.
 
-Verifier crates open with `**Scheme:** <name> — <family>, <standardization status>.`;
+Verifier crates open with `**Scheme:** <name>, <family>, <standardization status>.`;
 component crates with `**Component:** <what it provides>.`; both carry a
 `**Status:** <measured | stub (pending implementation)>.` line. The account harness
 (`bench_targets`) additionally lists its per-verifier module layout, and its efficiency
@@ -182,7 +182,7 @@ validate scenario.
   from `efficiency_baseline.json`;
 - **link to every crate** it mentions (tables and prose alike);
 - never reference pull requests, issues, or repository history — it describes the
-  current state only (history lives in commit messages and `PORTING.md`).
+  current state only (history lives in commit messages).
 
 ## Repo basics
 

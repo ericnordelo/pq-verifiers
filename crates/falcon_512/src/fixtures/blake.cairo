@@ -2,7 +2,7 @@
 //!
 //! Falcon-512+BLAKE2s bench fixture: a genuine keypair (tprest/falcon.py NTRU keygen)
 //! and signature over 'BENCH_MSG' from the reference ffSampling sampler, with the
-//! BLAKE2s hash-to-point of `hash_to_point.cairo`.
+//! BLAKE2s hash-to-point (matching `hash_to_point_512`).
 //! salt = 0x6ea23548a44d971fb0b47f7b53cb9cf918c03a7d3015f68cf8ec1ce99c8a04c5ec30e495f8a0934e,
 //! ||s0||^2 + ||s1||^2 = 27616781 (bound 34034726).
 

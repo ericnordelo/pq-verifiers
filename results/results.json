@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-07-06 17:19",
+    "generated": "2026-07-06 18:15",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -141,154 +141,154 @@
       "class_bytes": 287500,
       "verify_profile": [
         {
-          "function": "pqbench_falcon_512::falcon::verify_512_with_hint[1147-1717]",
-          "flat_steps": 49336,
-          "flat_pct": 15.27,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
-          "flat_steps": 47589,
-          "flat_pct": 14.73,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::merge_level[527-1829]",
-          "flat_steps": 40920,
-          "flat_pct": 12.66,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::merge_level[2018-2293]",
-          "flat_steps": 38656,
-          "flat_pct": 11.96,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::reduce_pass[256-1385]",
-          "flat_steps": 33856,
-          "flat_pct": 10.48,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::ntt[839-1096]",
-          "flat_steps": 21024,
-          "flat_pct": 6.51,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]",
-          "flat_steps": 19936,
-          "flat_pct": 6.17,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::falcon512::to_felts[97-179]",
-          "flat_steps": 15582,
-          "flat_pct": 4.82,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::falcon::to_felts[148-230]",
-          "flat_steps": 15388,
-          "flat_pct": 4.76,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::merge_level[1876-2327]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
-          "flat_steps": 13488,
-          "flat_pct": 4.17,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
-          "flat_steps": 7119,
-          "flat_pct": 2.2,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::merge_level[1876-2327]",
-          "flat_steps": 6956,
-          "flat_pct": 2.15,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::merge_level[385-1863]",
-          "flat_steps": 6426,
-          "flat_pct": 1.99,
-          "harness": false
-        },
-        {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1157-1845]",
-          "flat_steps": 2709,
-          "flat_pct": 0.84,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::ntt[1276-1856]",
-          "flat_steps": 1196,
-          "flat_pct": 0.37,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::engine::merge_level[385-1863]{NotSpecialized, 0, NotSpecialized, NotSpecialized, array![], NotSpecialized, NotSpecialized, }",
-          "flat_steps": 576,
-          "flat_pct": 0.18,
-          "harness": false
-        },
-        {
-          "function": "pqbench_ntt::falcon512::config_with_perm[300-521]{NotSpecialized, NotSpecialized, NotSpecialized, @512, }",
-          "flat_steps": 428,
-          "flat_pct": 0.13,
-          "harness": false
-        },
-        {
           "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
-          "flat_steps": 243,
-          "flat_pct": 0.08,
+          "flat_steps": 254574,
+          "flat_pct": 78.78,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::hash_to_point::limbs_128",
-          "flat_steps": 214,
-          "flat_pct": 0.07,
+          "function": "core::byte_array::split_info",
+          "flat_steps": 29037,
+          "flat_pct": 8.99,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::roots::get_even_roots",
-          "flat_steps": 152,
-          "flat_pct": 0.05,
+          "function": "pqbench_falcon_512_integrationtest::bench_shake::with_felt_replaced[220-394]{NotSpecialized, array![], NotSpecialized, 0, @1, }",
+          "flat_steps": 24549,
+          "flat_pct": 7.6,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::roots_scaled::get_scaled_inv_roots",
-          "flat_steps": 152,
-          "flat_pct": 0.05,
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_shake_512",
+          "flat_steps": 12084,
+          "flat_pct": 3.74,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
-          "flat_steps": 146,
-          "flat_pct": 0.05,
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_512",
+          "flat_steps": 1232,
+          "flat_pct": 0.38,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::ntt",
-          "flat_steps": 136,
+          "function": "pqbench_falcon_512_integrationtest::bench_shake::with_felt_replaced[220-394]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, @29, }",
+          "flat_steps": 880,
+          "flat_pct": 0.27,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512Verifier::verify",
+          "flat_steps": 135,
           "flat_pct": 0.04,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512",
-          "flat_steps": 131,
+          "function": "core::byte_array::split_bytes31",
+          "flat_steps": 129,
           "flat_pct": 0.04,
           "harness": false
         },
         {
-          "function": "pqbench_ntt::engine::ntt[1276-1856]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 1, NotSpecialized, 2, NotSpecialized, }",
-          "flat_steps": 128,
-          "flat_pct": 0.04,
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_f1600[177-278]",
+          "flat_steps": 91,
+          "flat_pct": 0.03,
           "harness": false
+        },
+        {
+          "function": "core::array::serialize_array_helper",
+          "flat_steps": 63,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::fixtures::blake::signature",
+          "flat_steps": 54,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::fixtures::shake::signature",
+          "flat_steps": 53,
+          "flat_pct": 0.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_shake::bench_baseline_falcon_512_shake__snforge_internal_test_generated",
+          "flat_steps": 51,
+          "flat_pct": 0.02,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_shake::test_falcon_512_shake_rejects_wrong_message__snforge_internal_test_generated",
+          "flat_steps": 50,
+          "flat_pct": 0.02,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_shake::bench_verify_falcon_512_shake__snforge_internal_test_generated",
+          "flat_steps": 49,
+          "flat_pct": 0.02,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_poseidon::test_falcon_512_poseidon_rejects_bad_lengths",
+          "flat_steps": 38,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "snforge_std::cheatcode::execute_cheatcode_and_deserialize",
+          "flat_steps": 22,
+          "flat_pct": 0.01,
+          "harness": true
+        },
+        {
+          "function": "core::panic_with_felt252",
+          "flat_steps": 18,
+          "flat_pct": 0.01,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_blake::bench_verify_falcon_512__snforge_internal_test_generated",
+          "flat_steps": 14,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "core::byte_array::InternalImpl::append_word_ex{{ array![], 0, 0 }, 156597686501187419869636722105056101857233838325615143057383470, 26, }",
+          "flat_steps": 11,
+          "flat_pct": 0.0,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_blake::signature_direct[219-294]",
+          "flat_steps": 6,
+          "flat_pct": 0.0,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_poseidon::test_falcon_512_poseidon_rejects_bad_lengths__snforge_internal_test_generated",
+          "flat_steps": 3,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512_integrationtest::bench_shake::test_falcon_512_shake_rejects_tampered_salt__snforge_internal_test_generated",
+          "flat_steps": 2,
+          "flat_pct": 0.0,
+          "harness": true
+        },
+        {
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_round",
+          "flat_steps": 1,
+          "flat_pct": 0.0,
+          "harness": false
+        },
+        {
+          "function": "Contract: SNFORGE_TEST_CODE Function: SNFORGE_TEST_CODE_FUNCTION",
+          "flat_steps": 0,
+          "flat_pct": 0.0,
+          "harness": true
         }
       ]
     },
@@ -366,7 +366,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1533-1821]",
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_512[1533-1821]",
           "flat_steps": 19936,
           "flat_pct": 5.84,
           "harness": false
@@ -468,7 +468,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_512[1157-1845]",
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_512[1157-1845]",
           "flat_steps": 2709,
           "flat_pct": 0.79,
           "harness": false
@@ -503,8 +503,8 @@
       "verify_l2_gas": 202528285,
       "verify_steps": 1613066,
       "verify_builtins": {
-        "bitwise": 36305,
-        "range_check": 269881
+        "range_check": 269881,
+        "bitwise": 36305
       },
       "calldata_l2_gas": 455680,
       "pct_of_gas_cap": 202.5283,
@@ -520,25 +520,25 @@
       "class_bytes": 381950,
       "verify_profile": [
         {
-          "function": "pqbench_falcon_512::shake256::keccak_round[895-1081]",
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_round[871-1057]",
           "flat_steps": 806400,
           "flat_pct": 49.99,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::keccak_round[1213-1749]",
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_round[1189-1725]",
           "flat_steps": 176832,
           "flat_pct": 10.96,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::keccak_round",
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_round",
           "flat_steps": 150048,
           "flat_pct": 9.3,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::emit_lane_le[175-319]",
+          "function": "pqbench_falcon_512::hashing::shake256::emit_lane_le[175-319]",
           "flat_steps": 64896,
           "flat_pct": 4.02,
           "harness": false
@@ -568,7 +568,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::hash_to_point::hash_to_point_shake_512[868-1119]{NotSpecialized, NonZero(12289), NotSpecialized, NotSpecialized, }",
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_shake_512[868-1119]{NotSpecialized, NonZero(12289), NotSpecialized, NotSpecialized, }",
           "flat_steps": 38233,
           "flat_pct": 2.37,
           "harness": false
@@ -580,7 +580,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::keccak_round[1213-1749]{0, array![], NotSpecialized, NotSpecialized, }",
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_round[1189-1725]{0, array![], NotSpecialized, NotSpecialized, }",
           "flat_steps": 33408,
           "flat_pct": 2.07,
           "harness": false
@@ -610,7 +610,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::keccak_f1600[193-294]",
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_f1600[177-278]",
           "flat_steps": 12441,
           "flat_pct": 0.77,
           "harness": false
@@ -622,7 +622,7 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::shake256[1695-1848]",
+          "function": "pqbench_falcon_512::hashing::shake256::shake256[1695-1848]",
           "flat_steps": 7048,
           "flat_pct": 0.44,
           "harness": false
@@ -640,33 +640,223 @@
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::hash_to_point::append_le_bytes[237-383]",
+          "function": "pqbench_falcon_512::hashing::hash_to_point::append_le_bytes[237-383]",
           "flat_steps": 5233,
           "flat_pct": 0.32,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::pad_ored_msb[234-408]",
+          "function": "pqbench_falcon_512::hashing::shake256::pad_ored_msb[234-408]",
           "flat_steps": 4744,
           "flat_pct": 0.29,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::load_lane_le[174-266]",
+          "function": "pqbench_falcon_512::hashing::shake256::load_lane_le[174-266]",
           "flat_steps": 3968,
           "flat_pct": 0.25,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::pow2_table[179-261]",
+          "function": "pqbench_falcon_512::hashing::shake256::pow2_table[179-261]",
           "flat_steps": 2613,
           "flat_pct": 0.16,
           "harness": false
         },
         {
-          "function": "pqbench_falcon_512::shake256::shake256[1225-1477]{NotSpecialized, NotSpecialized, 0, NotSpecialized, NotSpecialized, }",
+          "function": "pqbench_falcon_512::hashing::shake256::shake256[1225-1477]{NotSpecialized, NotSpecialized, 0, NotSpecialized, NotSpecialized, }",
           "flat_steps": 1370,
           "flat_pct": 0.08,
+          "harness": false
+        }
+      ]
+    },
+    {
+      "key": "falcon_512_poseidon",
+      "label": "Falcon-512 Poseidon (native)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_poseidon",
+      "baseline_test": "bench_baseline_falcon_512_poseidon",
+      "validate_test": "bench_validate_falcon_512_poseidon",
+      "validate_baseline_test": "bench_validate_base_falcon_512_poseidon",
+      "contract": "Falcon512PoseidonAccount",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); non-standard Poseidon hash-to-point",
+      "on_chain_hash": "Poseidon hash-to-point (on-chain, native hades_permutation squeeze)",
+      "offchain_prep": "signer supplies mul hint (s1*h mod q; +29 sig felts)",
+      "sig_felts": 60,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "Message-binding hash-to-point built on the native Poseidon builtin (hades_permutation squeeze), reusing the falcon_512 hint verify. On-chain cost is comparable to the BLAKE2s variant and ~5.5x cheaper than the standard SHAKE-256, and it fits the validation cap with wide margin. Being native field arithmetic it is also the most STARK-proving-friendly hash-to-point. Non-standard, so it needs a matching signer (a vendored Poseidon permutation in gen_falcon_fixture.py, checked against the corelib KAT).",
+      "measured": true,
+      "verify_l2_gas": 36885049,
+      "verify_steps": 334374,
+      "verify_builtins": {
+        "range_check": 44318,
+        "poseidon": 19
+      },
+      "calldata_l2_gas": 455680,
+      "pct_of_gas_cap": 36.885,
+      "pct_of_step_cap": 33.4374,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "validate_l2_gas": 38455509,
+      "validate_steps": 348643,
+      "validate_pct_of_gas_cap": 38.4555,
+      "validate_pct_of_step_cap": 34.8643,
+      "validate_fits": true,
+      "class_felts": 8924,
+      "class_bytes": 245354,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint[1147-1717]",
+          "flat_steps": 49216,
+          "flat_pct": 14.71,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_half[315-469]",
+          "flat_steps": 47578,
+          "flat_pct": 14.22,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[527-1829]",
+          "flat_steps": 40920,
+          "flat_pct": 12.23,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[2018-2293]",
+          "flat_steps": 38656,
+          "flat_pct": 11.55,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::reduce_pass[256-1385]",
+          "flat_steps": 33856,
+          "flat_pct": 10.12,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hashing::hash_to_point::push_half_words[265-443]",
+          "flat_steps": 32436,
+          "flat_pct": 9.7,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt[839-1096]",
+          "flat_steps": 21024,
+          "flat_pct": 6.28,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::falcon512::to_felts[97-179]",
+          "flat_steps": 15582,
+          "flat_pct": 4.66,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::to_felts[148-230]",
+          "flat_steps": 15388,
+          "flat_pct": 4.6,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "flat_steps": 13488,
+          "flat_pct": 4.03,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]",
+          "flat_steps": 7119,
+          "flat_pct": 2.13,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]",
+          "flat_steps": 6956,
+          "flat_pct": 2.08,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[385-1863]",
+          "flat_steps": 6426,
+          "flat_pct": 1.92,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_poseidon_512[1501-1802]",
+          "flat_steps": 2021,
+          "flat_pct": 0.6,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt[1276-1856]",
+          "flat_steps": 1196,
+          "flat_pct": 0.36,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[385-1863]{NotSpecialized, 0, NotSpecialized, NotSpecialized, array![], NotSpecialized, NotSpecialized, }",
+          "flat_steps": 576,
+          "flat_pct": 0.17,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::falcon512::config_with_perm[300-521]{NotSpecialized, NotSpecialized, NotSpecialized, @512, }",
+          "flat_steps": 428,
+          "flat_pct": 0.13,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[359-771]{NotSpecialized, array![], bool::True({}), 0, }",
+          "flat_steps": 243,
+          "flat_pct": 0.07,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::roots::get_even_roots",
+          "flat_steps": 152,
+          "flat_pct": 0.05,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::roots_scaled::get_scaled_inv_roots",
+          "flat_steps": 152,
+          "flat_pct": 0.05,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_with_hint",
+          "flat_steps": 146,
+          "flat_pct": 0.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt",
+          "flat_steps": 136,
+          "flat_pct": 0.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt[1276-1856]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 1, NotSpecialized, 2, NotSpecialized, }",
+          "flat_steps": 128,
+          "flat_pct": 0.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::fixtures::poseidon::signature",
+          "flat_steps": 124,
+          "flat_pct": 0.04,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::Falcon512PoseidonVerifier::verify",
+          "flat_steps": 114,
+          "flat_pct": 0.03,
           "harness": false
         }
       ]

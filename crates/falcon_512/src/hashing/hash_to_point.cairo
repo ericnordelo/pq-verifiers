@@ -1,7 +1,9 @@
-//! Hash-to-point for Falcon-512, two backends sharing one rejection rule
-//! ([`push_candidate`]): the cheap non-standard BLAKE2s counter-mode construction
-//! ([`hash_to_point_512`]) and the standard SHAKE-256 construction of the Falcon spec
-//! ([`hash_to_point_shake_512`], interoperable with stock signers like falcon.py).
+//! Hash-to-point for Falcon-512, three backends sharing one rejection rule
+//! ([`push_candidate`]): the non-standard BLAKE2s counter-mode construction
+//! ([`hash_to_point_512`]), the standard SHAKE-256 construction of the Falcon spec
+//! ([`hash_to_point_shake_512`], interoperable with stock signers like falcon.py), and a
+//! Poseidon squeeze over the native `hades_permutation` builtin
+//! ([`hash_to_point_poseidon_512`], non-standard but native and inexpensive).
 //!
 //! ## BLAKE2s backend
 //!
@@ -24,7 +26,8 @@
 //! signer must hash with this exact construction (see `scripts/gen_falcon_fixture.py`).
 
 use core::blake::{blake2s_compress, blake2s_finalize};
-use crate::shake256::shake256;
+use core::poseidon::hades_permutation;
+use super::shake256::shake256;
 
 /// blake2s-256 initial state: the BLAKE2s IV with the standard parameter word
 /// (digest_length = 32, key = 0, fanout = 1, depth = 1) XORed into h[0].
@@ -141,6 +144,70 @@ pub fn hash_to_point_shake_512(
         b += 2;
     }
     Some(coeffs)
+}
+
+/// ## Poseidon backend
+///
+/// Absorb `(salt_a, salt_b, message_hash)` as three field elements with the native Poseidon
+/// permutation (`hades_permutation`, a Starknet builtin), then squeeze — take the two rate
+/// elements `(s0, s1)` of the state, read 15 little-endian 16-bit words from the low 240
+/// bits of each (uniform, since the field prime exceeds `2^251`), apply the shared
+/// [`push_candidate`] rule, and permute the state again for the next block until 512
+/// coefficients are collected.
+///
+/// Non-standard (Poseidon is not in the Falcon spec), so the off-chain signer must match
+/// this construction (see `scripts/gen_falcon_fixture.py --variant poseidon`). Every step
+/// is a native field operation, so the hash-to-point is inexpensive: on-chain verify cost
+/// is close to the BLAKE2s backend and far below the pure-Cairo SHAKE-256 (the shared
+/// NTT/hint core dominates either way).
+
+/// Hash `(message_hash, salt)` to 512 coefficients in `[0, Q)` with a Poseidon squeeze.
+/// Returns `None` if either salt felt exceeds 20 bytes.
+pub fn hash_to_point_poseidon_512(
+    message_hash: felt252, salt_a: felt252, salt_b: felt252,
+) -> Option<Array<u16>> {
+    let sa: u256 = salt_a.into();
+    let sb: u256 = salt_b.into();
+    if sa >= TWO_POW_160 || sb >= TWO_POW_160 {
+        return None;
+    }
+    let q32: NonZero<u32> = 12289_u32.try_into().unwrap();
+    // Absorb the three inputs, then squeeze the rate elements two felts at a time.
+    let (mut s0, mut s1, mut s2) = hades_permutation(salt_a, salt_b, message_hash);
+    let mut coeffs: Array<u16> = array![];
+    while coeffs.len() != 512 {
+        push_felt_words(s0, q32, ref coeffs);
+        push_felt_words(s1, q32, ref coeffs);
+        if coeffs.len() == 512 {
+            break;
+        }
+        let (n0, n1, n2) = hades_permutation(s0, s1, s2);
+        s0 = n0;
+        s1 = n1;
+        s2 = n2;
+    }
+    Some(coeffs)
+}
+
+/// Read the low 240 bits of `felt` as 15 little-endian 16-bit candidate words — 8 from the
+/// low 128-bit half and 7 from the high half. Working on the two `u128` halves keeps each
+/// word a `u128` division (cheaper than dividing the full `u256`).
+fn push_felt_words(felt: felt252, q32: NonZero<u32>, ref coeffs: Array<u16>) {
+    let v: u256 = felt.into();
+    push_half_words(v.low, 8, q32, ref coeffs);
+    push_half_words(v.high, 7, q32, ref coeffs);
+}
+
+/// Feed the low `count` 16-bit words of a `u128` half as rejection-sampled candidates.
+fn push_half_words(mut half: u128, count: u32, q32: NonZero<u32>, ref coeffs: Array<u16>) {
+    let two16: NonZero<u128> = 0x10000_u128.try_into().unwrap();
+    let mut j = 0;
+    while j != count {
+        let (q, r) = DivRem::div_rem(half, two16);
+        push_candidate(r.try_into().unwrap(), q32, ref coeffs);
+        half = q;
+        j += 1;
+    }
 }
 
 /// Append the low `n` bytes of `value`, little-endian.

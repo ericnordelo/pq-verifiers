@@ -9,7 +9,7 @@
 use openzeppelin_testing::constants::stark::KEY_PAIR;
 use openzeppelin_testing::declare_and_deploy;
 use openzeppelin_testing::signing::SerializedSigning;
-use pqbench_falcon_512::{bench_fixture, bench_fixture_shake};
+use pqbench_falcon_512::fixtures::{blake, poseidon, shake};
 use pqbench_targets::{IValidateBenchDispatcher, IValidateBenchDispatcherTrait};
 use snforge_std::{start_cheat_signature_global, start_cheat_transaction_hash_global};
 
@@ -19,21 +19,28 @@ const MSG: felt252 = 'BENCH_MSG';
 /// so the deploy calldata is its Serde encoding (length-prefixed).
 fn falcon_calldata() -> Array<felt252> {
     let mut calldata = array![];
-    bench_fixture::public_key().serialize(ref calldata);
+    blake::public_key().serialize(ref calldata);
     calldata
 }
 
 /// The SHAKE fixture has its own keypair, so its deploy calldata is that key's encoding.
 fn falcon_shake_calldata() -> Array<felt252> {
     let mut calldata = array![];
-    bench_fixture_shake::public_key().serialize(ref calldata);
+    shake::public_key().serialize(ref calldata);
+    calldata
+}
+
+/// The Poseidon fixture has its own keypair, so its deploy calldata is that key's encoding.
+fn falcon_poseidon_calldata() -> Array<felt252> {
+    let mut calldata = array![];
+    poseidon::public_key().serialize(ref calldata);
     calldata
 }
 
 /// The direct variant's 31-felt signature is the `s1 ‖ salt` prefix of the hint signature.
 fn signature_direct() -> Array<felt252> {
     let mut out = array![];
-    let mut prefix = bench_fixture::signature().span().slice(0, 31);
+    let mut prefix = blake::signature().span().slice(0, 31);
     while let Some(f) = prefix.pop_front() {
         out.append(*f);
     }
@@ -66,17 +73,17 @@ fn bench_validate_ecdsa_stark() {
 #[test]
 fn bench_validate_base_falcon_512() {
     let address = declare_and_deploy("Falcon512Account", falcon_calldata());
-    start_cheat_transaction_hash_global(bench_fixture::msg());
-    start_cheat_signature_global(bench_fixture::signature().span());
+    start_cheat_transaction_hash_global(blake::msg());
+    start_cheat_signature_global(blake::signature().span());
     let _dispatcher = IValidateBenchDispatcher { contract_address: address };
-    assert!(bench_fixture::signature().len() == 60);
+    assert!(blake::signature().len() == 60);
 }
 
 #[test]
 fn bench_validate_falcon_512() {
     let address = declare_and_deploy("Falcon512Account", falcon_calldata());
-    start_cheat_transaction_hash_global(bench_fixture::msg());
-    start_cheat_signature_global(bench_fixture::signature().span());
+    start_cheat_transaction_hash_global(blake::msg());
+    start_cheat_signature_global(blake::signature().span());
     let dispatcher = IValidateBenchDispatcher { contract_address: address };
     let result = dispatcher.validate();
     assert!(result == starknet::VALIDATED);
@@ -85,7 +92,7 @@ fn bench_validate_falcon_512() {
 #[test]
 fn bench_validate_base_falcon_512_direct() {
     let address = declare_and_deploy("Falcon512DirectAccount", falcon_calldata());
-    start_cheat_transaction_hash_global(bench_fixture::msg());
+    start_cheat_transaction_hash_global(blake::msg());
     start_cheat_signature_global(signature_direct().span());
     let _dispatcher = IValidateBenchDispatcher { contract_address: address };
     assert!(signature_direct().len() == 31);
@@ -94,7 +101,7 @@ fn bench_validate_base_falcon_512_direct() {
 #[test]
 fn bench_validate_falcon_512_direct() {
     let address = declare_and_deploy("Falcon512DirectAccount", falcon_calldata());
-    start_cheat_transaction_hash_global(bench_fixture::msg());
+    start_cheat_transaction_hash_global(blake::msg());
     start_cheat_signature_global(signature_direct().span());
     let dispatcher = IValidateBenchDispatcher { contract_address: address };
     let result = dispatcher.validate();
@@ -104,17 +111,36 @@ fn bench_validate_falcon_512_direct() {
 #[test]
 fn bench_validate_base_falcon_512_shake() {
     let address = declare_and_deploy("Falcon512ShakeAccount", falcon_shake_calldata());
-    start_cheat_transaction_hash_global(bench_fixture_shake::msg());
-    start_cheat_signature_global(bench_fixture_shake::signature().span());
+    start_cheat_transaction_hash_global(shake::msg());
+    start_cheat_signature_global(shake::signature().span());
     let _dispatcher = IValidateBenchDispatcher { contract_address: address };
-    assert!(bench_fixture_shake::signature().len() == 60);
+    assert!(shake::signature().len() == 60);
 }
 
 #[test]
 fn bench_validate_falcon_512_shake() {
     let address = declare_and_deploy("Falcon512ShakeAccount", falcon_shake_calldata());
-    start_cheat_transaction_hash_global(bench_fixture_shake::msg());
-    start_cheat_signature_global(bench_fixture_shake::signature().span());
+    start_cheat_transaction_hash_global(shake::msg());
+    start_cheat_signature_global(shake::signature().span());
+    let dispatcher = IValidateBenchDispatcher { contract_address: address };
+    let result = dispatcher.validate();
+    assert!(result == starknet::VALIDATED);
+}
+
+#[test]
+fn bench_validate_base_falcon_512_poseidon() {
+    let address = declare_and_deploy("Falcon512PoseidonAccount", falcon_poseidon_calldata());
+    start_cheat_transaction_hash_global(poseidon::msg());
+    start_cheat_signature_global(poseidon::signature().span());
+    let _dispatcher = IValidateBenchDispatcher { contract_address: address };
+    assert!(poseidon::signature().len() == 60);
+}
+
+#[test]
+fn bench_validate_falcon_512_poseidon() {
+    let address = declare_and_deploy("Falcon512PoseidonAccount", falcon_poseidon_calldata());
+    start_cheat_transaction_hash_global(poseidon::msg());
+    start_cheat_signature_global(poseidon::signature().span());
     let dispatcher = IValidateBenchDispatcher { contract_address: address };
     let result = dispatcher.validate();
     assert!(result == starknet::VALIDATED);

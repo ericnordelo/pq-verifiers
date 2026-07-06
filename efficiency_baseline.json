@@ -54,6 +54,13 @@
       "l2_gas": 202528285,
       "steps": 1613066
     },
+    "falcon_512_poseidon_verify": {
+      "package": "pqbench_falcon_512",
+      "test": "bench_verify_falcon_512_poseidon",
+      "baseline": "bench_baseline_falcon_512_poseidon",
+      "l2_gas": 36885049,
+      "steps": 334374
+    },
     "falcon_512_validate": {
       "package": "pqbench_targets",
       "test": "bench_validate_falcon_512",
@@ -74,6 +81,13 @@
       "baseline": "bench_validate_base_falcon_512_shake",
       "l2_gas": 204098345,
       "steps": 1627331
+    },
+    "falcon_512_poseidon_validate": {
+      "package": "pqbench_targets",
+      "test": "bench_validate_falcon_512_poseidon",
+      "baseline": "bench_validate_base_falcon_512_poseidon",
+      "l2_gas": 38455509,
+      "steps": 348643
     }
   }
 }

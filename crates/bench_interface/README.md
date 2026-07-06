@@ -3,7 +3,7 @@
 **Component:** the common verifier interface and the validation-cap constants.
 **Status:** no measurable code (trait and constants only).
 
-Defines `PqSignatureVerifier` — the one surface every scheme implements so the harness
+Defines `PqSignatureVerifier`, the one surface every scheme implements so the harness
 can swap and measure them identically:
 
 ```cairo

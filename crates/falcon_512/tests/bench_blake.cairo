@@ -1,4 +1,5 @@
-//! Benchmark scenarios for the Falcon-512 (BLAKE2s hash-to-point, hint-based) verifier.
+//! Benchmark scenarios for the Falcon-512 verifiers with the BLAKE2s hash-to-point (the
+//! hint and direct variants).
 //!
 //! Measurement method (paired-test subtraction): the harness runs `bench_verify_*` and
 //! `bench_baseline_*`, which build IDENTICAL inputs; only the former calls `verify`. The
@@ -9,7 +10,7 @@
 //! below are the correctness gate: the fixture verifies, and any tampering — signature,
 //! hint, salt, message, or public key — is rejected.
 
-use pqbench_falcon_512::bench_fixture::{msg, public_key, signature};
+use pqbench_falcon_512::fixtures::blake::{msg, public_key, signature};
 use pqbench_falcon_512::{Falcon512DirectVerifier, Falcon512Verifier};
 use pqbench_interface::PqSignatureVerifier;
 

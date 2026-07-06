@@ -13,7 +13,7 @@
 //! SHAKE-256 hash-to-point path.
 
 use pqbench_falcon_512::Falcon512ShakeVerifier;
-use pqbench_falcon_512::bench_fixture_shake::{msg, public_key, signature};
+use pqbench_falcon_512::fixtures::shake::{msg, public_key, signature};
 use pqbench_interface::PqSignatureVerifier;
 
 /// Builds the inputs but does NOT verify — the subtraction baseline.
