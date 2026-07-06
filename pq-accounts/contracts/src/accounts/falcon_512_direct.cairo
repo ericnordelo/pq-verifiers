@@ -8,8 +8,8 @@ pub mod Falcon512DirectAccount {
     use pqbench_falcon_512::Falcon512DirectVerifier;
     use starknet::account::Call;
     use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
-    use crate::execution;
-    use crate::interface::{IFeltArrayDeployable, IFeltArrayPublicKey, IPqAccount};
+    use crate::utils::execution;
+    use crate::utils::interface::{IFeltArrayDeployable, IFeltArrayPublicKey, IPqAccount};
 
     #[storage]
     struct Storage {

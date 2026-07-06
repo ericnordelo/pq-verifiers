@@ -29,12 +29,17 @@ scripts/
   check_efficiency.py   # the efficiency ratchet gate (make check-eff / make ratchet)
   gen_ntt_tables.py     # proves the NTT engine model + emits its generated tables
   verify_ntt_constants.py  # re-derives the NTT root tables from first principles
-  gen_falcon_fixture.py # generates the genuine Falcon signature fixture
+  gen_falcon_fixture.py # generates the genuine Falcon fixtures (BLAKE2s + --variant shake)
 schemes.json            # scheme registry: one entry per verifier variant
 efficiency_baseline.json  # the ratchet: pinned L2 gas + steps per benchmark pair
 results/                # generated snapshot (never hand-edited)
 .github/workflows/      # CI: test suite + efficiency ratchet gate
 .tool-versions          # pinned toolchain (asdf); Makefile targets drive everything
+pq-accounts/            # SEPARATE sub-project: the DEPLOYABLE accounts, not the harness
+  contracts/            #   Cairo accounts — src/accounts/ (one per scheme) + src/utils/
+  cli/                  #   Starknet.js deploy/transact CLI
+  signers/              #   external signers (Falcon Python signer)
+  USAGE.md              #   step-by-step deploy + transact guide
 ```
 
 Three crate kinds. **Verifier crates** (one per scheme) implement `PqSignatureVerifier`
@@ -46,6 +51,13 @@ not prose. **The account harness** (`crates/bench_targets`) grows with the verif
 rather than being one thing: it holds one deployable account contract per verifier (one
 module each, all exposing the crate-root `IValidateBench` interface), and its
 measurements are the schemes' in-`__validate__` costs.
+
+Separately, **`pq-accounts/`** is a sibling sub-project holding the *deployable* accounts
+(real SNIP-6 contracts under `contracts/src/accounts/`, with shared interfaces and
+execution helpers under `contracts/src/utils/`), a Starknet.js deploy/transact CLI, and
+external signers. It is the real on-chain artifact, distinct from the benchmark harness.
+Its deploy-and-transact walkthrough is [`pq-accounts/USAGE.md`](pq-accounts/USAGE.md),
+which must stay in sync with the code (see the co-update table).
 
 ## What must be updated together
 
@@ -62,10 +74,11 @@ A change is complete only when everything it invalidates is regenerated in the s
 | The toolchain (`.tool-versions`) | the README Run section, the `toolchain` field of `efficiency_baseline.json`, and a fresh `make all` |
 | The CI workflow's `name:` or filename | the README status badge (its label and URL must match) |
 | Registries (`schemes.json`, baseline) | nothing by hand elsewhere — scripts read them; never duplicate their data into docs |
+| `pq-accounts` account contracts, CLI, or signers | re-check every command and layout reference in `pq-accounts/USAGE.md` and update as needed |
 
 Generated files are never hand-edited: `results/*`, `crates/ntt/src/roots_scaled.cairo`,
-`crates/ntt/src/bitrev.cairo`, `crates/falcon_512/src/bench_fixture.cairo`. Regenerate
-via the owning script.
+`crates/ntt/src/bitrev.cairo`, `crates/falcon_512/src/bench_fixture.cairo`,
+`crates/falcon_512/src/bench_fixture_shake.cairo`. Regenerate via the owning script.
 
 ## Performance: every public API is regression-checked
 

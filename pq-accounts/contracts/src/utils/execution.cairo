@@ -65,5 +65,5 @@ pub fn assert_valid_signature(valid: bool) -> felt252 {
 
 /// Reports whether an interface id is supported by every account in this package.
 pub fn supports_account_interface(interface_id: felt252) -> bool {
-    interface_id == crate::interface::ISRC5_ID || interface_id == crate::interface::ISRC6_ID
+    interface_id == super::interface::ISRC5_ID || interface_id == super::interface::ISRC6_ID
 }

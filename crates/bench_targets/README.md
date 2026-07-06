@@ -2,8 +2,8 @@
 
 **Component:** the account harness for the in-`__validate__` scenario — one deployable
 account contract per verifier.
-**Status:** measured (ECDSA-STARK and Falcon-512); other PQ verifiers' accounts land as
-their schemes are implemented.
+**Status:** measured (ECDSA-STARK and the three Falcon-512 variants); other PQ verifiers'
+accounts land as their schemes are implemented.
 
 Unlike the verifier crates (one scheme each), this crate collects **one account contract
 per verifier**, each in its own module. An account wraps its scheme the way a Starknet
@@ -20,14 +20,18 @@ src/
   lib.cairo          # IValidateBench + one module per verifier account
   ecdsa_stark.cairo  # EcdsaStarkAccount (classical control)
   falcon_512.cairo   # Falcon512Account (hint) + Falcon512DirectAccount (direct)
+                     #   + Falcon512ShakeAccount (standard SHAKE-256)
 ```
 
 ## Current efficiency
 
-One row per verifier account:
+One row per verifier account. The 100M-L2-gas / 1M-step validation cap is the deployability
+threshold; `Falcon512ShakeAccount` exceeds it (pure-Cairo SHAKE-256 hash-to-point) and is a
+benchmark target, not a deployable account.
 
 | Account | Measurement | L2 gas | Steps |
 |---|---|--:|--:|
 | `EcdsaStarkAccount` | inside `__validate__` | 160,795 | 1,437 |
 | `Falcon512Account` (hint) | inside `__validate__` | 37,213,800 | 337,228 |
 | `Falcon512DirectAccount` (direct) | inside `__validate__` | 38,710,030 | 354,481 |
+| `Falcon512ShakeAccount` (SHAKE-256) | inside `__validate__` | 204,098,345 | 1,627,331 |

@@ -58,6 +58,25 @@
       "notes": "Textbook verification equation: s1*h computed on-chain as INTT(NTT(s1) . h_ntt) — 2 transforms because the pk is stored NTT-domain (a coefficient-domain pk needs 3 and busts the gas cap, cf. ericnordelo/pq-verifiers#1). Half the signature calldata of the hint variant; no signer-supplied hint in the trust surface."
     },
     {
+      "key": "falcon_512_shake",
+      "label": "Falcon-512 SHAKE-256 (standard)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_shake",
+      "baseline_test": "bench_baseline_falcon_512_shake",
+      "validate_test": "bench_validate_falcon_512_shake",
+      "validate_baseline_test": "bench_validate_base_falcon_512_shake",
+      "contract": "Falcon512ShakeAccount",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); standard SHAKE-256 hash-to-point",
+      "on_chain_hash": "SHAKE-256 hash-to-point (on-chain, pure-Cairo Keccak-f[1600])",
+      "offchain_prep": "signer supplies mul hint (s1*h mod q; +29 sig felts)",
+      "sig_felts": 60,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "Standards-compliant hash-to-point: SHAKE-256 exactly per the Falcon spec, so signatures interoperate with any compliant signer (e.g. falcon.py) without a custom XOF. Same hint-based verify as falcon_512. On-chain cost is dominated by a pure-Cairo Keccak-f[1600] SHAKE-256; validation exceeds the step cap, so this is a benchmark target rather than a deployable account. A native keccak_f1600 syscall (SNIP-32) would collapse the hash cost and make it viable."
+    },
+    {
       "key": "ml_dsa_44",
       "label": "ML-DSA-44 (Dilithium)",
       "family": "lattice (module)",

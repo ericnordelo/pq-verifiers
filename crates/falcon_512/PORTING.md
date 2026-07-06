@@ -11,7 +11,7 @@ deviate from or refine the plan below:
   against tprest/falcon.py that pins the interop convention; the engine itself is proven
   against the recursive reference by `scripts/gen_ntt_tables.py` and the in-crate oracle
   tests.
-- **Variants**: both are registered in `schemes.json` and measured.
+- **Variants**: all three are registered in `schemes.json` and measured.
   - *Hint-based* (`falcon_512`): 2 forward NTTs; signature carries `mul_hint = s1*h`
     (+29 felts).
   - *Direct* (`falcon_512_direct`): no hint; `s1*h = INTT(NTT(s1) ∘ h_ntt)` — also only
@@ -23,10 +23,25 @@ deviate from or refine the plan below:
     keeps hash-to-point off-chain by carrying `msg_point` in the signature — rejected here
     because an on-chain verifier that never derives `msg_point` from `message_hash` is not
     message-binding: any `(s1, msg_point = s1*h + small)` pair would pass for any message).
+  - *SHAKE-256* (`falcon_512_shake`): the standard hash-to-point (see below) with the same
+    hint check and NTT core as `falcon_512`; interoperable with any compliant Falcon signer.
+    The pure-Cairo Keccak-f[1600] dominates: ~202.5M gas / 1.61M steps bare verify (~204.1M
+    gas / 1.63M steps in `__validate__`) — ~2× the 1M-step cap — so it is a **benchmark
+    target, not a deployable account**. A native `keccak_f1600` syscall (SNIP-32) is the one
+    change that closes the gap. The permutation is written tight (division-free rotate via a
+    pre-exponentiated `2^rho` table, θ fused into ρπ, ι folded into χ; ~112K steps per
+    permutation), ~2× cheaper than the `V-k-h/falcon-starknet` reference's hash-to-point.
 - **hash_to_point**: computed **on-chain** (message-binding), with the spec's rejection
-  sampling but the XOF instantiated as BLAKE2s in counter mode (`core::blake` builtin)
-  instead of SHAKE-256 — NON-standard, chosen for Cairo cost; construction documented in
-  `src/hash_to_point.cairo` and mirrored by `scripts/gen_falcon_fixture.py`.
+  sampling. Two XOF backends share the rejection rule in `src/hash_to_point.cairo`:
+  BLAKE2s in counter mode (`core::blake` builtin) for `falcon_512`/`falcon_512_direct` —
+  NON-standard, chosen for Cairo cost — and the standard SHAKE-256 for `falcon_512_shake`.
+  Both are mirrored by `scripts/gen_falcon_fixture.py` (`--variant shake` uses stock
+  falcon.py's own SHAKE hash-to-point, so the fixture is a genuine standards-compliant
+  signature). SHAKE-256 is implemented **clean-room from FIPS 202** in `src/shake256.cairo`
+  (Starknet exposes no SHAKE, and its `keccak` syscall bakes in keccak256's `0x01` padding
+  and a fixed 256-bit output); it is **not** derived from `V-k-h/falcon-starknet`, which
+  carries no license. Correctness is pinned by NIST SHAKE-256 KAT vectors plus the
+  end-to-end fixture verification.
 - **Canonical-range validation**: unpacking rejects non-canonical base-Q encodings
   (the "PK coefficients < Q on read" gap flagged below), and oversized salts.
 - **Encoding**: pk = 29 felts (packed NTT-domain h); signature = 60 felts

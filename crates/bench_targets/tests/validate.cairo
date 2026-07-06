@@ -9,7 +9,7 @@
 use openzeppelin_testing::constants::stark::KEY_PAIR;
 use openzeppelin_testing::declare_and_deploy;
 use openzeppelin_testing::signing::SerializedSigning;
-use pqbench_falcon_512::bench_fixture;
+use pqbench_falcon_512::{bench_fixture, bench_fixture_shake};
 use pqbench_targets::{IValidateBenchDispatcher, IValidateBenchDispatcherTrait};
 use snforge_std::{start_cheat_signature_global, start_cheat_transaction_hash_global};
 
@@ -20,6 +20,13 @@ const MSG: felt252 = 'BENCH_MSG';
 fn falcon_calldata() -> Array<felt252> {
     let mut calldata = array![];
     bench_fixture::public_key().serialize(ref calldata);
+    calldata
+}
+
+/// The SHAKE fixture has its own keypair, so its deploy calldata is that key's encoding.
+fn falcon_shake_calldata() -> Array<felt252> {
+    let mut calldata = array![];
+    bench_fixture_shake::public_key().serialize(ref calldata);
     calldata
 }
 
@@ -89,6 +96,25 @@ fn bench_validate_falcon_512_direct() {
     let address = declare_and_deploy("Falcon512DirectAccount", falcon_calldata());
     start_cheat_transaction_hash_global(bench_fixture::msg());
     start_cheat_signature_global(signature_direct().span());
+    let dispatcher = IValidateBenchDispatcher { contract_address: address };
+    let result = dispatcher.validate();
+    assert!(result == starknet::VALIDATED);
+}
+
+#[test]
+fn bench_validate_base_falcon_512_shake() {
+    let address = declare_and_deploy("Falcon512ShakeAccount", falcon_shake_calldata());
+    start_cheat_transaction_hash_global(bench_fixture_shake::msg());
+    start_cheat_signature_global(bench_fixture_shake::signature().span());
+    let _dispatcher = IValidateBenchDispatcher { contract_address: address };
+    assert!(bench_fixture_shake::signature().len() == 60);
+}
+
+#[test]
+fn bench_validate_falcon_512_shake() {
+    let address = declare_and_deploy("Falcon512ShakeAccount", falcon_shake_calldata());
+    start_cheat_transaction_hash_global(bench_fixture_shake::msg());
+    start_cheat_signature_global(bench_fixture_shake::signature().span());
     let dispatcher = IValidateBenchDispatcher { contract_address: address };
     let result = dispatcher.validate();
     assert!(result == starknet::VALIDATED);

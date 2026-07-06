@@ -1,4 +1,9 @@
-//! BLAKE2s-based hash-to-point for Falcon-512.
+//! Hash-to-point for Falcon-512, two backends sharing one rejection rule
+//! ([`push_candidate`]): the cheap non-standard BLAKE2s counter-mode construction
+//! ([`hash_to_point_512`]) and the standard SHAKE-256 construction of the Falcon spec
+//! ([`hash_to_point_shake_512`], interoperable with stock signers like falcon.py).
+//!
+//! ## BLAKE2s backend
 //!
 //! Maps `(message_hash, salt)` to 512 coefficients in `[0, Q)`:
 //!
@@ -19,6 +24,7 @@
 //! signer must hash with this exact construction (see `scripts/gen_falcon_fixture.py`).
 
 use core::blake::{blake2s_compress, blake2s_finalize};
+use crate::shake256::shake256;
 
 /// blake2s-256 initial state: the BLAKE2s IV with the standard parameter word
 /// (digest_length = 32, key = 0, fanout = 1, depth = 1) XORed into h[0].
@@ -91,6 +97,62 @@ fn push_candidate(candidate: u32, q32: NonZero<u32>, ref coeffs: Array<u16>) {
     if coeffs.len() != 512 && candidate < REJECT_BOUND {
         let (_, r) = DivRem::div_rem(candidate, q32);
         coeffs.append(r.try_into().unwrap());
+    }
+}
+
+/// ## SHAKE-256 backend
+///
+/// The standard Falcon (FIPS 206) construction: absorb `salt || message_hash` with
+/// SHAKE-256, then consume the squeezed stream as big-endian 16-bit words, applying the
+/// shared [`push_candidate`] rule (accept `word % Q` while `word < 5Q`) until 512
+/// coefficients are collected. Unlike the BLAKE2s backend this is interoperable with any
+/// standards-compliant Falcon signer (e.g. falcon.py). The message hash is absorbed as
+/// its 32 little-endian bytes, the salt as its two 20-byte little-endian halves.
+///
+/// SHAKE-256 candidate bytes to squeeze: 768 words, ample margin over the ~546 expected
+/// to yield 512 accepted coefficients (acceptance rate 5Q/2^16 ≈ 0.938).
+const H2P_SHAKE_OUT_BYTES: u32 = 1536;
+
+/// Hash `(message_hash, salt)` to 512 coefficients in `[0, Q)` with the standard
+/// SHAKE-256 construction. Returns `None` if either salt felt exceeds 20 bytes.
+pub fn hash_to_point_shake_512(
+    message_hash: felt252, salt_a: felt252, salt_b: felt252,
+) -> Option<Array<u16>> {
+    let sa: u256 = salt_a.into();
+    let sb: u256 = salt_b.into();
+    if sa >= TWO_POW_160 || sb >= TWO_POW_160 {
+        return None;
+    }
+    // Absorb salt (40 bytes, two 20-byte halves) then the 32-byte message hash.
+    let mut input: Array<u8> = array![];
+    append_le_bytes(ref input, salt_a, 20);
+    append_le_bytes(ref input, salt_b, 20);
+    append_le_bytes(ref input, message_hash, 32);
+    let stream = shake256(input, H2P_SHAKE_OUT_BYTES);
+
+    let q32: NonZero<u32> = 12289_u32.try_into().unwrap();
+    let mut coeffs: Array<u16> = array![];
+    let mut b: u32 = 0;
+    while coeffs.len() != 512 {
+        // Big-endian 16-bit candidate word.
+        let hi: u32 = (*stream.at(b)).into();
+        let lo: u32 = (*stream.at(b + 1)).into();
+        push_candidate(hi * 256 + lo, q32, ref coeffs);
+        b += 2;
+    }
+    Some(coeffs)
+}
+
+/// Append the low `n` bytes of `value`, little-endian.
+fn append_le_bytes(ref out: Array<u8>, value: felt252, n: u32) {
+    let mut v: u256 = value.into();
+    let b256: NonZero<u256> = 256_u256.try_into().unwrap();
+    let mut i = 0;
+    while i != n {
+        let (q, r) = DivRem::div_rem(v, b256);
+        out.append(r.try_into().unwrap());
+        v = q;
+        i += 1;
     }
 }
 

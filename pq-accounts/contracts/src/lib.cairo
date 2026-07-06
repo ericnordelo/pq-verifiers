@@ -4,9 +4,9 @@
 //! declare, and deploy-account transactions. Each concrete account stores the public-key
 //! encoding required by its verifier and validates `tx_info.signature` against
 //! `tx_info.transaction_hash`.
+//!
+//! Layout: `accounts` holds the deployable account contracts (one module per verifier
+//! scheme); `utils` holds the shared account interfaces and the execution/validation flow.
 
-pub mod ecdsa_stark;
-pub mod execution;
-pub mod falcon_512;
-pub mod falcon_512_direct;
-pub mod interface;
+pub mod accounts;
+pub mod utils;

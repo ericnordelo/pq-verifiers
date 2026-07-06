@@ -1,24 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 324" width="720" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">
-<rect x="0.5" y="0.5" width="719" height="323" rx="12" fill="#ffffff" stroke="#e3e3e3"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 364" width="720" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">
+<rect x="0.5" y="0.5" width="719" height="363" rx="12" fill="#ffffff" stroke="#e3e3e3"/>
 <text x="24" y="34" font-size="18" font-weight="600" fill="#1a1a1a">Post-quantum verifier benchmark — Starknet</text>
-<text x="24" y="55" font-size="12" fill="#666666">In-validate verification cost vs the 100M L2-gas validation cap · updated 2026-07-03 16:34</text>
+<text x="24" y="55" font-size="12" fill="#666666">In-validate verification cost vs the 100M L2-gas validation cap · updated 2026-07-06 17:19</text>
 <text x="24" y="96" font-size="13" fill="#1a1a1a">ECDSA-STARK (baseline)</text>
 <rect x="230" y="82" width="250" height="20" rx="5" fill="#f0f0f0"/>
 <rect x="230" y="82" width="2" height="20" rx="5" fill="#185FA5"/>
 <text x="696" y="96" font-size="12" fill="#333333" text-anchor="end">160,795 L2 gas (0.1608% of cap)</text>
 <text x="24" y="136" font-size="13" fill="#1a1a1a">Falcon-512 (FN-DSA)</text>
 <rect x="230" y="122" width="250" height="20" rx="5" fill="#f0f0f0"/>
-<rect x="230" y="122" width="240" height="20" rx="5" fill="#185FA5"/>
+<rect x="230" y="122" width="46" height="20" rx="5" fill="#185FA5"/>
 <text x="696" y="136" font-size="12" fill="#333333" text-anchor="end">37,213,800 L2 gas (37.2138% of cap)</text>
 <text x="24" y="176" font-size="13" fill="#1a1a1a">Falcon-512 direct (no hint)</text>
 <rect x="230" y="162" width="250" height="20" rx="5" fill="#f0f0f0"/>
-<rect x="230" y="162" width="250" height="20" rx="5" fill="#185FA5"/>
+<rect x="230" y="162" width="47" height="20" rx="5" fill="#185FA5"/>
 <text x="696" y="176" font-size="12" fill="#333333" text-anchor="end">38,710,030 L2 gas (38.71% of cap)</text>
-<text x="24" y="216" font-size="13" fill="#1a1a1a">ML-DSA-44 (Dilithium)</text>
+<text x="24" y="216" font-size="13" fill="#1a1a1a">Falcon-512 SHAKE-256 (standard)</text>
 <rect x="230" y="202" width="250" height="20" rx="5" fill="#f0f0f0"/>
-<text x="240" y="216" font-size="12" fill="#9a9a9a">pending implementation</text>
-<text x="24" y="256" font-size="13" fill="#1a1a1a">Poseidon-WOTS+ (hash-based)</text>
+<rect x="230" y="202" width="250" height="20" rx="5" fill="#185FA5"/>
+<text x="696" y="216" font-size="12" fill="#333333" text-anchor="end">204,098,345 L2 gas (204.0983% of cap)</text>
+<text x="24" y="256" font-size="13" fill="#1a1a1a">ML-DSA-44 (Dilithium)</text>
 <rect x="230" y="242" width="250" height="20" rx="5" fill="#f0f0f0"/>
 <text x="240" y="256" font-size="12" fill="#9a9a9a">pending implementation</text>
-<text x="24" y="306" font-size="11" fill="#888888">Caps: 1,000,000 steps / 100,000,000 L2 gas. ECDSA-STARK is a classical control, not a PQ candidate.</text>
+<text x="24" y="296" font-size="13" fill="#1a1a1a">Poseidon-WOTS+ (hash-based)</text>
+<rect x="230" y="282" width="250" height="20" rx="5" fill="#f0f0f0"/>
+<text x="240" y="296" font-size="12" fill="#9a9a9a">pending implementation</text>
+<text x="24" y="346" font-size="11" fill="#888888">Caps: 1,000,000 steps / 100,000,000 L2 gas. ECDSA-STARK is a classical control, not a PQ candidate.</text>
 </svg>

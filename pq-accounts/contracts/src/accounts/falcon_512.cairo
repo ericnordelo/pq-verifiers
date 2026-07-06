@@ -1,26 +1,28 @@
-//! ECDSA-STARK account contract.
+//! Falcon-512 hint account contract.
 //!
-//! This account stores a single STARK-curve public key felt and validates transaction
-//! signatures with `pqbench_ecdsa_stark`. It is the classical control account for the
-//! package and mirrors the same signature layout as the verifier crate: `[r, s]`.
+//! This account stores the packed 29-felt NTT-domain public key used by the Falcon-512
+//! verifier and expects the hint signature layout: packed `s1`, two salt felts, and the
+//! packed multiplication hint.
 
 #[starknet::contract(account)]
-pub mod EcdsaStarkAccount {
-    use pqbench_ecdsa_stark::EcdsaStarkVerifier;
+pub mod Falcon512Account {
+    use pqbench_falcon_512::Falcon512Verifier;
     use starknet::account::Call;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use crate::execution;
-    use crate::interface::{IPqAccount, ISingleFeltDeployable, ISingleFeltPublicKey};
+    use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
+    use crate::utils::execution;
+    use crate::utils::interface::{IFeltArrayDeployable, IFeltArrayPublicKey, IPqAccount};
 
     #[storage]
     struct Storage {
-        public_key: felt252,
+        public_key: Vec<felt252>,
     }
 
-    /// Initializes the account with the STARK-curve public key used for validation.
+    /// Initializes the account with the packed Falcon public key used for validation.
     #[constructor]
-    fn constructor(ref self: ContractState, public_key: felt252) {
-        self.public_key.write(public_key);
+    fn constructor(ref self: ContractState, public_key: Array<felt252>) {
+        for felt in public_key {
+            self.public_key.push(felt);
+        }
     }
 
     #[abi(embed_v0)]
@@ -53,12 +55,12 @@ pub mod EcdsaStarkAccount {
     }
 
     #[abi(embed_v0)]
-    impl DeployableImpl of ISingleFeltDeployable<ContractState> {
+    impl DeployableImpl of IFeltArrayDeployable<ContractState> {
         fn __validate_deploy__(
             self: @ContractState,
             class_hash: felt252,
             contract_address_salt: felt252,
-            public_key: felt252,
+            public_key: Array<felt252>,
         ) -> felt252 {
             let _ = class_hash;
             let _ = contract_address_salt;
@@ -68,9 +70,9 @@ pub mod EcdsaStarkAccount {
     }
 
     #[abi(embed_v0)]
-    impl PublicKeyImpl of ISingleFeltPublicKey<ContractState> {
-        fn get_public_key(self: @ContractState) -> felt252 {
-            self.public_key.read()
+    impl PublicKeyImpl of IFeltArrayPublicKey<ContractState> {
+        fn get_public_key(self: @ContractState) -> Array<felt252> {
+            self.read_public_key()
         }
     }
 
@@ -84,11 +86,23 @@ pub mod EcdsaStarkAccount {
             )
         }
 
+        /// Reads the stored public key into the verifier's packed felt layout.
+        fn read_public_key(self: @ContractState) -> Array<felt252> {
+            let mut public_key = array![];
+            let len = self.public_key.len();
+            let mut i = 0;
+            while i != len {
+                public_key.append(self.public_key.at(i).read());
+                i += 1;
+            }
+            public_key
+        }
+
         /// Verifies a signature span against the stored public key.
         fn is_valid_signature_span(
             self: @ContractState, hash: felt252, signature: Span<felt252>,
         ) -> bool {
-            EcdsaStarkVerifier::verify(hash, array![self.public_key.read()].span(), signature)
+            Falcon512Verifier::verify(hash, self.read_public_key().span(), signature)
         }
     }
 }

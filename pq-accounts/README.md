@@ -4,12 +4,16 @@
 implementations in this repository, plus a small Starknet.js-based CLI for deploying and
 sending transactions through those accounts.
 
+See [`USAGE.md`](USAGE.md) for the step-by-step deploy-and-transact walkthrough.
+
 ## Projects
 
-- `contracts/`: Cairo account contracts. Each account lives in its own source file and
-  implements the account entrypoints used by Starknet: `__execute__`, `__validate__`,
-  `__validate_declare__`, `__validate_deploy__`, `is_valid_signature`, and
-  `supports_interface`.
+- `contracts/`: Cairo account contracts. `src/accounts/` holds one account per verifier
+  scheme (`EcdsaStarkAccount`, `Falcon512Account`, `Falcon512DirectAccount`), each
+  implementing the account entrypoints used by Starknet (`__execute__`, `__validate__`,
+  `__validate_declare__`, `__validate_deploy__`, `is_valid_signature`,
+  `supports_interface`); `src/utils/` holds the shared account interfaces and the
+  execution/validation helpers.
 - `cli/`: TypeScript command line tool. It uses Starknet.js for transaction assembly,
   fee estimation, nonce handling, and RPC submission, while scheme adapters provide the
   signature felts consumed by the account contracts.
