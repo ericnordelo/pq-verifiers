@@ -26,13 +26,17 @@ Clone and prepare `falcon.py` separately:
 ```bash
 git clone https://github.com/tprest/falcon.py /path/to/falcon.py
 git -C /path/to/falcon.py checkout 5145a818c9512b4a443507d3375e75dae3076af6
-python3 -m pip install numpy pycryptodome beartype
+python3 -m venv pq-accounts/.venv
+pq-accounts/.venv/bin/pip install numpy pycryptodome beartype
 ```
+
+The CLI invokes this signer with the interpreter named by `PQ_PYTHON`; point it at
+`pq-accounts/.venv/bin/python3` so the dependencies stay local to the project.
 
 Generate a key file:
 
 ```bash
-python3 pq-accounts/signers/falcon-python/falcon_signer.py keygen \
+pq-accounts/.venv/bin/python3 pq-accounts/signers/falcon-python/falcon_signer.py keygen \
   --falcon-py /path/to/falcon.py \
   --key pq-accounts/signers/falcon-python/falcon-key.json
 ```

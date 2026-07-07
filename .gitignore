@@ -6,6 +6,7 @@ snfoundry_trace/
 
 # python
 __pycache__/
+.venv/
 
 # js/ts
 dist/
@@ -14,3 +15,6 @@ node_modules/
 # local signer keys (the committed demo key is allowlisted)
 pq-accounts/signers/**/*-key.json
 !pq-accounts/signers/falcon-python/demo-key.json
+
+**/tmp/
+**/my-falcon-key.json

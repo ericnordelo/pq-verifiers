@@ -8,6 +8,8 @@ import { ensureDeclared } from "./ops/declare.js";
 import { computeAccountAddress } from "./ops/deployAccount.js";
 import { accountStatus } from "./ops/status.js";
 import { quickstart } from "./ops/quickstart.js";
+import { serveWallet } from "./serve.js";
+import { walletContextFromEnv } from "./walletRpc.js";
 
 type CommonSignerOptions = {
   scheme: string;
@@ -312,6 +314,50 @@ program
         `--account ${result.address} --to <target> --entrypoint <name> --calldata <felts...>\n`
     );
   });
+
+withSchemeOptions(program.command("serve"))
+  .description(
+    "Run the local wallet daemon for browser dapps: injects a get-starknet-discoverable " +
+      "wallet that signs with the selected scheme through this process."
+  )
+  .option("--rpc <url>", "Starknet JSON-RPC endpoint. Env: PQ_RPC.", defaultRpc())
+  .option("--account <address>", "Deployed account address the wallet exposes. Env: PQ_ACCOUNT.", process.env.PQ_ACCOUNT)
+  .option("--port <number>", "Port to listen on (127.0.0.1 only).", "8777")
+  .option(
+    "--wallet-id <id>",
+    "Injected window.starknet_<id> key. StarknetKit dapps (Voyager) only show ids in " +
+      "their connector list; the default occupies a registered-but-absent slot.",
+    "braavos"
+  )
+  .action(
+    async (
+      options: CommonSignerOptions & {
+        rpc: string;
+        account?: string;
+        port: string;
+        walletId: string;
+      }
+    ) => {
+      if (!options.account) {
+        throw new Error("Provide the deployed account with --account or PQ_ACCOUNT.");
+      }
+      const signerMaterial = parseSignerOptions(options);
+      const ctx = walletContextFromEnv({
+        rpcUrl: options.rpc,
+        accountAddress: parseFelt(options.account, "--account"),
+        schemeKey: options.scheme,
+        signerMaterial,
+        warn: (line) => process.stderr.write(`  ! ${line}\n`)
+      });
+      serveWallet({
+        ctx,
+        port: Number(options.port),
+        walletId: options.walletId,
+        log: (line) => process.stderr.write(`${line}\n`)
+      });
+      // The server keeps the process alive; commander returns here.
+    }
+  );
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);

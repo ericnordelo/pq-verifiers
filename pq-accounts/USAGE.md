@@ -18,10 +18,17 @@ One-time setup:
 # Node >= 20, and Python 3.9+ for the Falcon signer.
 git clone https://github.com/tprest/falcon.py /path/to/falcon.py
 git -C /path/to/falcon.py checkout 5145a818c9512b4a443507d3375e75dae3076af6
-python3 -m pip install numpy pycryptodome beartype
+python3 -m venv .venv
+.venv/bin/pip install numpy pycryptodome beartype
 (cd contracts && scarb build)
 (cd cli && npm install && npm run build)
 ```
+
+The signer's dependencies live in the local `.venv`; `PQ_PYTHON` (below) points the CLI,
+the MCP server, and the wallet daemon at it — no global installs, no activation needed.
+If pip fails with SSL errors, your default `python3` was built without OpenSSL (common
+with old pyenv builds): recreate the venv from another interpreter, e.g.
+`/opt/homebrew/bin/python3 -m venv .venv`.
 
 Set up the environment (from `pq-accounts/`; the CLI and the MCP server read the same
 `PQ_*` variables, and flags always override them):
@@ -29,6 +36,7 @@ Set up the environment (from `pq-accounts/`; the CLI and the MCP server read the
 ```bash
 export PQ_FALCON_PY=/path/to/falcon.py
 export PQ_FALCON_KEY=$PWD/signers/falcon-python/demo-key.json   # INSECURE demo key, devnet only
+export PQ_PYTHON=$PWD/.venv/bin/python3
 alias pq-accounts="node $PWD/cli/dist/index.js"
 ```
 
@@ -61,7 +69,7 @@ To sign with your own key instead of the committed demo key
 private material is public), generate one and re-point the variable:
 
 ```bash
-python3 signers/falcon-python/falcon_signer.py keygen \
+"$PQ_PYTHON" signers/falcon-python/falcon_signer.py keygen \
   --falcon-py "$PQ_FALCON_PY" --key my-falcon-key.json
 export PQ_FALCON_KEY=$PWD/my-falcon-key.json
 ```
@@ -79,6 +87,7 @@ throwaway key by itself.
 ```bash
 claude mcp add pq-accounts \
   -e PQ_FALCON_PY=/path/to/falcon.py \
+  -e PQ_PYTHON=/absolute/path/to/pq-accounts/.venv/bin/python3 \
   -- node /absolute/path/to/pq-accounts/cli/dist/mcp.js
 ```
 
@@ -99,9 +108,46 @@ Configuration is environment-only:
 | `PQ_FALCON_KEY` | Falcon key file | the committed demo key |
 | `PQ_PRIVATE_KEY` | private key for `ecdsa-stark` | — |
 | `PQ_FUNDER_ADDRESS` / `PQ_FUNDER_PRIVATE_KEY` | funded account for declarations | devnet predeployed account |
-| `PQ_PYTHON` | python executable for the signer | `python3` |
+| `PQ_PYTHON` | python executable for the signer (the `.venv` one) | `python3` |
 
 The same variables configure the CLI (flags take precedence).
+
+## Browser dapps (Voyager)
+
+`pq-accounts serve` runs a local wallet daemon that exposes a deployed account to
+browser dapps. It prints a paste-ready snippet that injects a `window.starknet_<id>`
+wallet object into the page; the connect dialog then lists it, and no dapp-side
+integration is needed. The snippet is a relay: signing happens in this process with your
+key file — the key never enters the browser, and requests are token-gated per run.
+
+Voyager's connect dialog is StarknetKit, which only shows an injected wallet whose id
+matches one of the connectors it registers. The daemon therefore injects under a
+registered-but-absent slot (default `braavos`, shown as "Install Braavos" until injected)
+— StarknetKit still displays this wallet's own name ("PQ Falcon Account") and icon, just
+in that slot. Pick another slot with `--wallet-id` (e.g. `keplr`, `okxwallet`) if you
+have Braavos installed. Dapps that use get-starknet directly accept any id.
+
+```bash
+export PQ_ACCOUNT=0xYOUR_DEPLOYED_ACCOUNT
+pq-accounts serve --scheme falcon-512-shake
+```
+
+Then, in the dapp's tab: open the DevTools console, paste the snippet the daemon
+printed, and click the dapp's connect-wallet button — select "PQ Falcon Account".
+Contract writes arrive as `wallet_addInvokeTransaction` and are Falcon-signed and
+submitted by the daemon; sign-message flows arrive as `wallet_signTypedData` and verify
+against the account's `is_valid_signature`.
+
+Voyager indexes public networks only, so for Voyager the account must live on Sepolia
+(section below) with `PQ_RPC` pointing there. Against a devnet, the daemon works with
+any locally served dapp.
+
+If the connect button spins forever, watch the daemon log. A common cause is the dapp
+requesting a network switch (`wallet_switchStarknetChain`) to a different chain than
+`PQ_RPC` — Voyager's wallet target is set independently of the subdomain, so it may ask
+for mainnet on the Sepolia site. The daemon accepts the switch and prints a warning;
+transactions still go to `PQ_RPC`'s network. Set the dapp's own network selector to
+match `PQ_RPC` so what it displays lines up with where transactions land.
 
 ## Scheme reference
 
