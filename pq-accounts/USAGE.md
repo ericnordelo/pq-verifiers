@@ -210,8 +210,8 @@ with Voyager.)
 Voyager's connect dialog is StarknetKit, which only shows an injected wallet whose id
 matches one of the connectors it registers. The daemon therefore injects under a
 registered-but-absent slot (default `braavos`, shown as "Install Braavos" until injected)
-— StarknetKit still displays this wallet's own name ("PQ Falcon Account") and icon, just
-in that slot. Pick another slot with `--wallet-id` (e.g. `keplr`, `okxwallet`) if you
+— StarknetKit still displays this wallet's own name (e.g. "PQ Falcon-512 SHAKE-256") and
+icon, just in that slot. Pick another slot with `--wallet-id` (e.g. `keplr`, `okxwallet`) if you
 have Braavos installed. Dapps that use get-starknet directly accept any id.
 
 ```bash
@@ -220,7 +220,8 @@ pq-accounts serve --scheme falcon-512-shake
 ```
 
 Then, in the dapp's tab: open the DevTools console, paste the snippet the daemon
-printed, and click the dapp's connect-wallet button — select "PQ Falcon Account".
+printed, and click the dapp's connect-wallet button — select the "PQ ..." wallet named
+after your scheme.
 Contract writes arrive as `wallet_addInvokeTransaction` and are Falcon-signed and
 submitted by the daemon; sign-message flows arrive as `wallet_signTypedData` and verify
 against the account's `is_valid_signature`.

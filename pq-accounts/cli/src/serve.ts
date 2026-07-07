@@ -18,13 +18,18 @@ const ICON =
  * id matches a registered connector, so this defaults to an id in that list (`braavos`);
  * the modal still shows this object's own name and icon, not the impersonated wallet's.
  * Dapps using get-starknet directly accept any id. */
-export function injectorSnippet(port: number, token: string, walletId: string): string {
+export function injectorSnippet(
+  port: number,
+  token: string,
+  walletId: string,
+  walletName: string
+): string {
   return `(() => {
   const url = "http://127.0.0.1:${port}/wallet";
   const listeners = { accountsChanged: [], networkChanged: [] };
   window.starknet_${walletId} = {
     id: "${walletId}",
-    name: "PQ Falcon Account",
+    name: "${walletName}",
     version: "0.1.0",
     icon: "${ICON}",
     request: async (call) => {
@@ -40,8 +45,13 @@ export function injectorSnippet(port: number, token: string, walletId: string): 
     on: (e, h) => { (listeners[e] ??= []).push(h); },
     off: (e, h) => { listeners[e] = (listeners[e] ?? []).filter((x) => x !== h); },
   };
-  console.log("PQ Falcon Account wallet injected as starknet_${walletId} — open the dapp's connect dialog.");
+  console.log("${walletName} wallet injected as starknet_${walletId} — open the dapp's connect dialog.");
 })();`;
+}
+
+/** The name dapp connect dialogs display for this wallet. */
+function walletName(ctx: WalletContext): string {
+  return `PQ ${ctx.scheme.label}`;
 }
 
 function setCors(req: IncomingMessage, res: ServerResponse): void {
@@ -81,7 +91,7 @@ export function serveWallet(params: {
     }
     if (req.method === "GET" && req.url?.startsWith("/inject.js")) {
       res.writeHead(200, { "content-type": "application/javascript" });
-      res.end(injectorSnippet(params.port, token, params.walletId));
+      res.end(injectorSnippet(params.port, token, params.walletId, walletName(params.ctx)));
       return;
     }
     if (req.method === "POST" && req.url === "/wallet") {
@@ -138,6 +148,6 @@ export function serveWallet(params: {
     params.log("");
     params.log("Paste this into the dapp tab's DevTools console, then connect:");
     params.log("");
-    params.log(injectorSnippet(params.port, token, params.walletId));
+    params.log(injectorSnippet(params.port, token, params.walletId, walletName(params.ctx)));
   });
 }
