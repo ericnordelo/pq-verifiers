@@ -1,7 +1,9 @@
 # Deploying and transacting with the accounts
 
 How to deploy the `pq-accounts` account contracts and send transactions through them,
-from the CLI in [`cli/`](cli) or from an LLM through the MCP server.
+from the CLI in [`cli/`](cli) or from an LLM through the MCP server. This guide is
+devnet-first; for Sepolia, mainnet, and browser dapps like Voyager, see
+[`SEPOLIA.md`](SEPOLIA.md).
 
 > Keep this guide in sync with the code. Whenever the account contracts
 > ([`contracts/`](contracts)), the CLI ([`cli/`](cli)), or a signer ([`signers/`](signers))
@@ -154,84 +156,11 @@ are nearly all overhead). The SHAKE values vary a few percent from one signature
 next (its hash-to-point permutation count depends on the salt). The `quickstart` and the
 MCP tools print these values from the live receipts of each run.
 
-## Sepolia
+## Public networks and browser dapps
 
-The quickstart is devnet-only; on a public network the same commands run individually.
-**Never use the demo key outside a devnet** — its private material is public. Generate
-your own key first (see the keygen step above).
-
-Point the environment at Sepolia. Any Starknet JSON-RPC 0.8 endpoint works — the public
-one below, or a provider of your choice (Alchemy, Infura, Blast, Nethermind):
-
-```bash
-export PQ_RPC=https://api.zan.top/public/starknet-sepolia/rpc/v0_10
-export PQ_FALCON_KEY=$PWD/my-falcon-key.json
-# A funded Sepolia account of yours pays the one-time class declaration. Use a
-# single-signer account whose private key Starknet.js can sign with (e.g. Ready/ArgentX).
-export PQ_FUNDER_ADDRESS=0xYOUR_ACCOUNT PQ_FUNDER_PRIVATE_KEY=0xITS_KEY
-```
-
-Declare, prefund, deploy:
-
-```bash
-# 1. Declare the account class (one-time per class; idempotent). Prints the class hash.
-pq-accounts declare --scheme falcon-512-shake
-
-# 2. Derive the account address from your key. Send it ~2 STRK before deploying
-#    (from your wallet, or https://faucet.starknet.io).
-pq-accounts constructor-calldata --scheme falcon-512-shake \
-  --class-hash 0xCLASS_HASH --salt 0x0
-
-# 3. Deploy — the account Falcon-verifies its own deployment signature on-chain.
-pq-accounts deploy-account --scheme falcon-512-shake \
-  --class-hash 0xCLASS_HASH --address-salt 0x0
-pq-accounts status --address 0xYOUR_ACCOUNT
-```
-
-The account is now visible at `https://sepolia.voyager.online/contract/0xYOUR_ACCOUNT`,
-and `execute` sends transactions from it exactly as on devnet. To transact from
-Voyager's UI instead, keep this environment, set `PQ_ACCOUNT`, and follow the browser
-dapps section below.
-
-Falcon validation consumes tens of millions of L2 gas per transaction — expect real
-STRK fees (roughly 0.1 STRK scale at a 1 gwei-FRI gas price).
-
-## Browser dapps (Voyager)
-
-Voyager only indexes public networks, so this uses the Sepolia account deployed above,
-with `PQ_RPC` still pointing at Sepolia. `pq-accounts serve` runs a local wallet daemon
-that exposes that account to browser dapps: it prints a paste-ready snippet that injects
-a `window.starknet_<id>` wallet object into the page, the connect dialog lists it, and no
-dapp-side integration is needed. The snippet is a relay — signing happens in this process
-with your key file, the key never enters the browser, and requests are token-gated per
-run. (Against a devnet the daemon also works, but only with a dapp you serve locally, not
-with Voyager.)
-
-Voyager's connect dialog is StarknetKit, which only shows an injected wallet whose id
-matches one of the connectors it registers. The daemon therefore injects under a
-registered-but-absent slot (default `braavos`, shown as "Install Braavos" until injected)
-— StarknetKit still displays this wallet's own name (e.g. "PQ Falcon-512 SHAKE-256") and
-icon, just in that slot. Pick another slot with `--wallet-id` (e.g. `keplr`, `okxwallet`) if you
-have Braavos installed. Dapps that use get-starknet directly accept any id.
-
-```bash
-export PQ_ACCOUNT=0xYOUR_DEPLOYED_ACCOUNT
-pq-accounts serve --scheme falcon-512-shake
-```
-
-Then, in the dapp's tab: open the DevTools console, paste the snippet the daemon
-printed, and click the dapp's connect-wallet button — select the "PQ ..." wallet named
-after your scheme.
-Contract writes arrive as `wallet_addInvokeTransaction` and are Falcon-signed and
-submitted by the daemon; sign-message flows arrive as `wallet_signTypedData` and verify
-against the account's `is_valid_signature`.
-
-If the connect button spins forever, watch the daemon log. A common cause is the dapp
-requesting a network switch (`wallet_switchStarknetChain`) to a different chain than
-`PQ_RPC` — Voyager's wallet target is set independently of the subdomain, so it may ask
-for mainnet on the Sepolia site. The daemon accepts the switch and prints a warning;
-transactions still go to `PQ_RPC`'s network. Set the dapp's own network selector to
-match `PQ_RPC` so what it displays lines up with where transactions land.
+To declare, deploy, and transact on Sepolia or mainnet — including driving an account
+from a browser dapp like Voyager — see [`SEPOLIA.md`](SEPOLIA.md). It is the same CLI
+with `PQ_RPC` pointed at a public endpoint and your own key.
 
 ## Handy checks
 

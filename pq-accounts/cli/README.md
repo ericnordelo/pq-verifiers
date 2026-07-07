@@ -68,7 +68,7 @@ pq-accounts status --rpc http://127.0.0.1:5050/rpc --address 0xACCOUNT
 ```
 
 Expose a deployed account to browser dapps as an injected wallet (prints the
-console-paste snippet; see the browser-dapps section in [`../USAGE.md`](../USAGE.md)):
+console-paste snippet; walkthrough in [`../SEPOLIA.md`](../SEPOLIA.md)):
 
 ```bash
 pq-accounts serve --scheme falcon-512-shake --account 0xACCOUNT

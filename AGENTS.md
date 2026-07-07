@@ -39,7 +39,8 @@ pq-accounts/            # SEPARATE sub-project: the DEPLOYABLE accounts, not the
   contracts/            #   Cairo accounts — src/accounts/ (one per scheme) + src/utils/
   cli/                  #   Starknet.js deploy/transact CLI + stdio MCP server
   signers/              #   external signers (Falcon Python signer)
-  USAGE.md              #   step-by-step deploy + transact guide
+  USAGE.md              #   devnet-first deploy + transact guide
+  SEPOLIA.md            #   public-network (Sepolia/mainnet) + browser-dapp guide
 ```
 
 Three crate kinds. **Verifier crates** (one per scheme) implement `PqSignatureVerifier`
@@ -56,8 +57,9 @@ Separately, **`pq-accounts/`** is a sibling sub-project holding the *deployable*
 (real SNIP-6 contracts under `contracts/src/accounts/`, with shared interfaces and
 execution helpers under `contracts/src/utils/`), a Starknet.js deploy/transact CLI, and
 external signers. It is the real on-chain artifact, distinct from the benchmark harness.
-Its deploy-and-transact walkthrough is [`pq-accounts/USAGE.md`](pq-accounts/USAGE.md),
-which must stay in sync with the code (see the co-update table).
+Its deploy-and-transact walkthroughs are [`pq-accounts/USAGE.md`](pq-accounts/USAGE.md)
+(devnet-first) and [`pq-accounts/SEPOLIA.md`](pq-accounts/SEPOLIA.md) (public networks +
+browser dapps), which must stay in sync with the code (see the co-update table).
 
 ## What must be updated together
 
@@ -74,7 +76,7 @@ A change is complete only when everything it invalidates is regenerated in the s
 | The toolchain (`.tool-versions`) | the README Run section, the `toolchain` field of `efficiency_baseline.json`, and a fresh `make all` |
 | The CI workflow's `name:` or filename | the README status badge (its label and URL must match) |
 | Registries (`schemes.json`, baseline) | nothing by hand elsewhere — scripts read them; never duplicate their data into docs |
-| `pq-accounts` account contracts, CLI, or signers | re-check every command and layout reference in `pq-accounts/USAGE.md` and update as needed |
+| `pq-accounts` account contracts, CLI, or signers | re-check every command and layout reference in `pq-accounts/USAGE.md` and `pq-accounts/SEPOLIA.md` and update as needed |
 
 Generated files are never hand-edited: `results/*`, `crates/ntt/src/roots_scaled.cairo`,
 `crates/ntt/src/roots_felt.cairo`, `crates/ntt/src/bitrev.cairo`,

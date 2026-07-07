@@ -6,7 +6,8 @@ MCP server for LLM clients, and a local wallet daemon that plugs the accounts in
 browser dapps such as Voyager.
 
 See [`USAGE.md`](USAGE.md) for the walkthrough — on a devnet, one command deploys and
-transacts through an account: `node cli/dist/index.js quickstart`.
+transacts through an account: `node cli/dist/index.js quickstart`. For Sepolia, mainnet,
+and browser dapps like Voyager, see [`SEPOLIA.md`](SEPOLIA.md).
 
 ## Projects
 
