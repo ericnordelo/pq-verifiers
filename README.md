@@ -1,11 +1,9 @@
 # PQ verifiers for Starknet accounts
 
-[![CI](https://img.shields.io/github/actions/workflow/status/ericnordelo/pq-verifiers/efficiency.yml?branch=main&label=CI)](https://github.com/ericnordelo/pq-verifiers/actions/workflows/efficiency.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/OpenZeppelin/cairo-pq-verifiers/efficiency.yml?branch=main&label=CI)](https://github.com/OpenZeppelin/cairo-pq-verifiers/actions/workflows/efficiency.yml)
 
 _Comparing candidate post-quantum signature verifiers for a Starknet account by their
 verification cost._
-
-_Last updated: 2026-07-07._
 
 ## Why
 
@@ -13,7 +11,8 @@ Starknet's STARK proofs are post-quantum. The ECDSA signatures that authorize ac
 transactions are not, and Shor's algorithm could forge them. Because Starknet accounts are
 smart contracts (account abstraction), a post-quantum account can ship today by swapping the
 check inside `__validate__`, provided that verification fits Starknet's validation limits.
-This repo measures which schemes fit, and which is cheapest.
+This repo measures which schemes fit, and which is cheapest — and ships deployable
+post-quantum accounts you can try today (see below).
 
 ## What we measure
 
@@ -89,6 +88,15 @@ variant also has an account contract measured inside `__validate__`, where the r
 sits just above bare verify (the verifier dominates; dispatch, the 29-slot key read, and
 deserialization are small). The remaining PQ verifiers are stubs behind the same interface.
 
+## Try the accounts
+
+[`pq-accounts/`](pq-accounts) holds deployable SNIP-6 account contracts for every measured
+verifier, plus three ways to drive them: a CLI whose devnet quickstart declares, funds,
+deploys, and transacts in one command; an MCP server exposing the same operations to LLM
+clients; and a local wallet daemon that plugs the accounts into browser dapps (they appear
+in Voyager's connect-wallet dialog and sign contract calls with Falcon). The walkthrough
+is [`pq-accounts/USAGE.md`](pq-accounts/USAGE.md), including deploying to Sepolia.
+
 ## Report
 
 `make report` regenerates these from the latest run:
@@ -152,6 +160,7 @@ scripts/             # run_bench.py, profile.py, gen_report.py, check_efficiency
 schemes.json         # the scheme registry
 efficiency_baseline.json  # the efficiency ratchet (CI-enforced)
 results/             # generated report plus committed snapshot
+pq-accounts/         # deployable accounts + CLI, MCP server, browser wallet (USAGE.md)
 ```
 
 Adding a scheme is documented in [`AGENTS.md`](AGENTS.md).

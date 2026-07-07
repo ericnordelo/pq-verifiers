@@ -67,7 +67,7 @@ A change is complete only when everything it invalidates is regenerated in the s
 |---|---|
 | Any measured Cairo code | `make all` (regenerates `results/`), `make check-eff`, and `make ratchet` if numbers improved |
 | Any number in `efficiency_baseline.json` | the efficiency tables in the main README and in the owning crate's README |
-| A verifier's cost or status | the README snapshot table and its `Last updated:` date |
+| A verifier's cost or status | the README snapshot table |
 | A scheme's encoding (felt layout, sizes) | `schemes.json` sizes, the crate README, `scripts/gen_falcon_fixture.py` (and regenerate the fixture) |
 | The public surface of a measured crate | its benchmark pairs and `efficiency_baseline.json` entries (see below) |
 | NTT tables or the engine's arithmetic | `scripts/gen_ntt_tables.py` (model first, then `--emit`), `scripts/verify_ntt_constants.py` must still pass |
@@ -193,7 +193,6 @@ validate scenario.
   references to internal libraries, monorepos, or private processes.
 - **Keep the toolchain pinned** in `.tool-versions`; if you change it, say why in the
   README.
-- **Date the README** (`Last updated:`) whenever you change what it describes.
 
 ## Verify before you finish
 

@@ -1,8 +1,9 @@
 # pq-accounts
 
 `pq-accounts` contains deployable Starknet account contracts that use the verifier
-implementations in this repository, plus a small Starknet.js-based CLI for deploying and
-sending transactions through those accounts.
+implementations in this repository, and three ways to drive them: a Starknet.js CLI, an
+MCP server for LLM clients, and a local wallet daemon that plugs the accounts into
+browser dapps such as Voyager.
 
 See [`USAGE.md`](USAGE.md) for the walkthrough — on a devnet, one command deploys and
 transacts through an account: `node cli/dist/index.js quickstart`.
