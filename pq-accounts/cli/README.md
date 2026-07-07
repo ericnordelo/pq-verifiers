@@ -19,7 +19,13 @@ The built-in account descriptors are:
 
 ECDSA signing is implemented with Starknet.js. Falcon signing is delegated to an external
 signer process so the CLI can interact with the accounts without reimplementing the
-Falcon sampler in TypeScript.
+Falcon sampler in TypeScript. The bundled signer in `../signers/falcon-python` is wired
+in with two flags (or environment variables): `--falcon-py`/`PQ_FALCON_PY` for the
+falcon.py checkout and `--falcon-key`/`PQ_FALCON_KEY` for the key file.
+
+The package also ships `dist/mcp.js`, a stdio MCP server exposing the same operations to
+LLM clients; see the MCP section in [`../USAGE.md`](../USAGE.md) for registration and
+the environment variables.
 
 ## Install
 
@@ -38,6 +44,26 @@ npm run dev -- accounts
 After `npm run build`, the package exposes the `pq-accounts` binary from `dist/index.js`.
 
 ## Commands
+
+The fastest path on a devnet is one command (declares, prefunds, deploys, and sends a
+transfer, reporting per-step gas):
+
+```bash
+pq-accounts quickstart --scheme falcon-512-shake --falcon-py /path/to/falcon.py
+```
+
+Declare an account class (devnet predeployed funder by default; pass
+`--funder-address`/`--funder-private-key` elsewhere):
+
+```bash
+pq-accounts declare --rpc http://127.0.0.1:5050/rpc --scheme falcon-512-shake
+```
+
+Inspect an account:
+
+```bash
+pq-accounts status --rpc http://127.0.0.1:5050/rpc --address 0xACCOUNT
+```
 
 List built-in signature adapters:
 
@@ -63,17 +89,14 @@ pq-accounts sign-hash \
   --hash 0xabc
 ```
 
-Inspect constructor calldata before deploying an account:
+Inspect constructor calldata before deploying an account (add `--class-hash` and
+`--salt` to also derive the counterfactual address to prefund):
 
 ```bash
 pq-accounts constructor-calldata \
   --scheme falcon-512 \
-  --signer-command python3 \
-  --signer-arg ../signers/falcon-python/falcon_signer.py \
-  --signer-arg --falcon-py \
-  --signer-arg /path/to/falcon.py \
-  --signer-arg --key \
-  --signer-arg ../signers/falcon-python/falcon-key.json
+  --falcon-py /path/to/falcon.py \
+  --falcon-key ../signers/falcon-python/demo-key.json
 ```
 
 Send an invoke transaction from an account. The CLI uses Starknet.js `Account.execute`,

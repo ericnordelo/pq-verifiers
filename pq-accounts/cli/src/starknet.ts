@@ -1,5 +1,8 @@
-import { Account, RpcProvider, type Call } from "starknet";
+import { Account, RpcProvider, logger, type Call } from "starknet";
 import type { Felt, PqSignatureScheme } from "./schemes/types.js";
+
+// Starknet.js logs fee-estimation heuristics at WARN; keep command output clean.
+logger.setLogLevel("ERROR");
 
 type SupportedAccountVersion = "0x3";
 

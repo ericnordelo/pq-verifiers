@@ -10,3 +10,7 @@ __pycache__/
 # js/ts
 dist/
 node_modules/
+
+# local signer keys (the committed demo key is allowlisted)
+pq-accounts/signers/**/*-key.json
+!pq-accounts/signers/falcon-python/demo-key.json

@@ -5,7 +5,7 @@
 _Comparing candidate post-quantum signature verifiers for a Starknet account by their
 verification cost._
 
-_Last updated: 2026-07-06._
+_Last updated: 2026-07-07._
 
 ## Why
 
@@ -21,8 +21,13 @@ For each scheme, the cost of verifying one signature, both alone and inside a re
 `__validate__`: L2 gas, Cairo steps, signature and key size, contract class size, and where
 the steps go.
 
-Validation is capped at 1,000,000 steps and 100,000,000 L2 gas (blockifier v0.13.4), so a
-verifier has to fit under both.
+Validation is capped at 1,000,000 steps and 100,000,000 L2 gas (blockifier v0.13.4;
+both unchanged as of Starknet 0.14.3), so a verifier has to fit under both.
+
+These are resource measurements — steps and builtins priced with the protocol gas table.
+Transaction **fees** meter L2 gas differently for Sierra ≥ 1.7 classes and run roughly
+twice these values on this workload; receipt-measured costs per deployed account are in
+[`pq-accounts/USAGE.md`](pq-accounts/USAGE.md#what-transactions-cost).
 
 ## Snapshot
 
@@ -97,8 +102,9 @@ results/results.json     # raw data plus metadata
 ## Run
 
 The toolchain is pinned in `.tool-versions` (Scarb 2.18.0, Starknet Foundry 0.59.0,
-cairo-profiler 0.16.0). Install it with [asdf](https://asdf-vm.com) or
-[starkup](https://github.com/software-mansion/starkup).
+cairo-profiler 0.16.0, plus starknet-devnet 0.9.0 for the
+[`pq-accounts`](pq-accounts/USAGE.md) walkthrough). Install it with
+[asdf](https://asdf-vm.com) or [starkup](https://github.com/software-mansion/starkup).
 
 ```bash
 make all        # measure, profile, then render the report

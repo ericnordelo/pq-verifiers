@@ -1,20 +1,29 @@
 #!/usr/bin/env node
 import { Command, Option } from "commander";
-import { buildCall, createAccount } from "./starknet.js";
+import { buildCall, createAccount, createProvider } from "./starknet.js";
 import { parseFelt, parseFeltList, parseSignerOptions, printJson } from "./options.js";
 import { listSchemes, resolveScheme } from "./schemes/registry.js";
+import { resolveFunder } from "./devnet.js";
+import { ensureDeclared } from "./ops/declare.js";
+import { computeAccountAddress } from "./ops/deployAccount.js";
+import { accountStatus } from "./ops/status.js";
+import { quickstart } from "./ops/quickstart.js";
 
 type CommonSignerOptions = {
   scheme: string;
   privateKey?: string;
   signerCommand?: string;
   signerArg?: string[];
+  falconPy?: string;
+  falconKey?: string;
 };
 
 function withSchemeOptions(command: Command): Command {
   return command
     .requiredOption("--scheme <key>", "Signature scheme adapter to use, for example ecdsa-stark.")
-    .option("--private-key <felt>", "Private key for a built-in Starknet.js signer adapter.")
+    .option("--private-key <felt>", "Private key for a built-in Starknet.js signer adapter. Env: PQ_PRIVATE_KEY.")
+    .option("--falcon-py <path>", "falcon.py checkout for the bundled Falcon signer. Env: PQ_FALCON_PY.")
+    .option("--falcon-key <path>", "Key file for the bundled Falcon signer. Env: PQ_FALCON_KEY.")
     .option("--signer-command <path>", "Executable external signer for schemes not built into this CLI.")
     .option("--signer-arg <arg>", "Argument passed to --signer-command. May be repeated.", (value, previous: string[] = []) => [
       ...previous,
@@ -71,16 +80,31 @@ withSchemeOptions(program.command("public-key"))
   });
 
 withSchemeOptions(program.command("constructor-calldata"))
-  .description("Print the constructor calldata derived from the selected account signer.")
-  .action(async (options: CommonSignerOptions) => {
+  .description(
+    "Print the constructor calldata derived from the selected account signer; with " +
+      "--class-hash and --salt, also the counterfactual address to prefund."
+  )
+  .option("--class-hash <felt>", "Declared class hash, to derive the account address.")
+  .option("--salt <felt>", "Deployment salt, to derive the account address.")
+  .action(async (options: CommonSignerOptions & { classHash?: string; salt?: string }) => {
     const signer = parseSignerOptions(options);
     const scheme = resolveScheme(options.scheme, signer.kind === "external-command");
     const publicKey = await scheme.publicKey({ signer });
+    const constructorCalldata = scheme.constructorCalldata(publicKey);
+    const address =
+      options.classHash && options.salt
+        ? computeAccountAddress(
+            parseFelt(options.classHash, "--class-hash"),
+            parseFelt(options.salt, "--salt"),
+            constructorCalldata
+          )
+        : undefined;
     printJson({
       scheme: scheme.key,
       accountContract: scheme.accountContract,
       publicKey,
-      constructorCalldata: scheme.constructorCalldata(publicKey)
+      constructorCalldata,
+      address
     });
   });
 
@@ -137,7 +161,10 @@ withSchemeOptions(program.command("execute"))
       );
       const response = await account.execute([call], {
         nonce: options.nonce ? parseFelt(options.nonce, "--nonce") : undefined,
-        version: options.version ? parseFelt(options.version, "--version") : undefined
+        version: options.version ? parseFelt(options.version, "--version") : undefined,
+        // Fee estimation must run the verifier: a SKIP_VALIDATE estimate would
+        // under-provision l2 gas for validation-heavy accounts.
+        skipValidate: false
       });
       printJson({ scheme: scheme.key, transactionHash: response.transaction_hash, response });
     }
@@ -194,7 +221,10 @@ withSchemeOptions(program.command("deploy-account"))
           contractAddress: options.contractAddress ? parseFelt(options.contractAddress, "--contract-address") : undefined
         },
         {
-          version: options.version ? parseFelt(options.version, "--version") : undefined
+          version: options.version ? parseFelt(options.version, "--version") : undefined,
+          // Fee estimation must run the verifier: a SKIP_VALIDATE estimate would
+          // under-provision l2 gas for validation-heavy accounts.
+          skipValidate: false
         }
       );
       printJson({
@@ -207,6 +237,81 @@ withSchemeOptions(program.command("deploy-account"))
       });
     }
   );
+
+program
+  .command("declare")
+  .description("Declare an account class using a funded account (devnet predeployed by default).")
+  .requiredOption("--rpc <url>", "Starknet JSON-RPC endpoint.")
+  .option("--scheme <key>", "Scheme whose account contract to declare.")
+  .option("--contract <name>", "Contract name to declare instead of deriving it from --scheme.")
+  .option("--funder-address <felt>", "Funded account address paying the declaration. Env: PQ_FUNDER_ADDRESS.")
+  .option("--funder-private-key <felt>", "Funded account private key. Env: PQ_FUNDER_PRIVATE_KEY.")
+  .action(
+    async (options: {
+      rpc: string;
+      scheme?: string;
+      contract?: string;
+      funderAddress?: string;
+      funderPrivateKey?: string;
+    }) => {
+      const contractName = options.contract ?? (options.scheme ? resolveScheme(options.scheme, true).accountContract : undefined);
+      if (!contractName) {
+        throw new Error("Provide --scheme or --contract.");
+      }
+      const funder = await resolveFunder(options.rpc, {
+        address: options.funderAddress,
+        privateKey: options.funderPrivateKey
+      });
+      const result = await ensureDeclared({
+        provider: createProvider(options.rpc),
+        funderAddress: funder.address,
+        funderPrivateKey: funder.privateKey,
+        contractName
+      });
+      printJson(result);
+    }
+  );
+
+program
+  .command("status")
+  .description("Report deployment state, nonce, and STRK balance for an account address.")
+  .requiredOption("--rpc <url>", "Starknet JSON-RPC endpoint.")
+  .requiredOption("--address <felt>", "Account address to inspect.")
+  .action(async (options: { rpc: string; address: string }) => {
+    printJson(await accountStatus(createProvider(options.rpc), parseFelt(options.address, "--address")));
+  });
+
+program
+  .command("quickstart")
+  .description(
+    "Devnet golden path: declare the account class, prefund the derived address, deploy, and send one transfer."
+  )
+  .option("--rpc <url>", "Devnet JSON-RPC endpoint.", "http://127.0.0.1:5050/rpc")
+  .option("--scheme <key>", "Scheme to demonstrate.", "falcon-512-shake")
+  .option("--salt <felt>", "Deployment salt. Defaults to a random value.")
+  .option("--falcon-py <path>", "falcon.py checkout for the bundled Falcon signer. Env: PQ_FALCON_PY.")
+  .option("--falcon-key <path>", "Key file overriding the committed demo key. Env: PQ_FALCON_KEY.")
+  .action(async (options: { rpc: string; scheme: string; salt?: string; falconPy?: string; falconKey?: string }) => {
+    if (options.falconPy) {
+      process.env.PQ_FALCON_PY = options.falconPy;
+    }
+    if (options.falconKey) {
+      process.env.PQ_FALCON_KEY = options.falconKey;
+    }
+    const result = await quickstart({
+      rpcUrl: options.rpc,
+      schemeKey: options.scheme,
+      salt: options.salt ? parseFelt(options.salt, "--salt") : undefined,
+      log: (line) => process.stderr.write(`* ${line}\n`)
+    });
+    process.stderr.write("\n");
+    printJson(result);
+    process.stderr.write(
+      `\nAccount ${result.address} is live. Send another transaction with:\n` +
+        `  pq-accounts execute --rpc <rpc> --scheme ${result.scheme} ` +
+        `--account ${result.address} --to <target> --entrypoint <name> --calldata <felts...>\n`
+    );
+  });
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);

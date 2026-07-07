@@ -37,7 +37,7 @@ results/                # generated snapshot (never hand-edited)
 .tool-versions          # pinned toolchain (asdf); Makefile targets drive everything
 pq-accounts/            # SEPARATE sub-project: the DEPLOYABLE accounts, not the harness
   contracts/            #   Cairo accounts — src/accounts/ (one per scheme) + src/utils/
-  cli/                  #   Starknet.js deploy/transact CLI
+  cli/                  #   Starknet.js deploy/transact CLI + stdio MCP server
   signers/              #   external signers (Falcon Python signer)
   USAGE.md              #   step-by-step deploy + transact guide
 ```

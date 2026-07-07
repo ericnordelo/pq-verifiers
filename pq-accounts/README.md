@@ -4,7 +4,8 @@
 implementations in this repository, plus a small Starknet.js-based CLI for deploying and
 sending transactions through those accounts.
 
-See [`USAGE.md`](USAGE.md) for the step-by-step deploy-and-transact walkthrough.
+See [`USAGE.md`](USAGE.md) for the walkthrough — on a devnet, one command deploys and
+transacts through an account: `node cli/dist/index.js quickstart`.
 
 ## Projects
 
@@ -16,9 +17,10 @@ See [`USAGE.md`](USAGE.md) for the step-by-step deploy-and-transact walkthrough.
   the shared account interfaces, the execution/validation helpers, and the reusable
   verifier-generic account component (`PqAccountComponent`) that the Falcon accounts
   embed — a concrete account is the component instantiated with its verifier.
-- `cli/`: TypeScript command line tool. It uses Starknet.js for transaction assembly,
-  fee estimation, nonce handling, and RPC submission, while scheme adapters provide the
-  signature felts consumed by the account contracts.
+- `cli/`: TypeScript command line tool plus a stdio MCP server (`dist/mcp.js`) for LLM
+  clients. Both use Starknet.js for transaction assembly, fee estimation, nonce handling,
+  and RPC submission, while scheme adapters provide the signature felts consumed by the
+  account contracts.
 - `signers/`: External signer processes used by the CLI for schemes whose signing logic
   is not implemented in TypeScript. The Falcon signer wraps a local `falcon.py` checkout
   and returns the exact felt layouts expected by the Falcon accounts, deriving the

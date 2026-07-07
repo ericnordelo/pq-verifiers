@@ -1,3 +1,4 @@
 scarb 2.18.0
 starknet-foundry 0.59.0
 cairo-profiler 0.16.0
+starknet-devnet 0.9.0

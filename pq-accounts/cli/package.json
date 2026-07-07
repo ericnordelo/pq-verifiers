@@ -6,14 +6,16 @@
   "type": "module",
   "bin": {
     "pq-accounts": "./dist/index.js",
-    "pq-account": "./dist/index.js"
+    "pq-accounts-mcp": "./dist/mcp.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "mcp": "tsx src/mcp.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "^12.1.0",
     "starknet": "^10.0.2",
     "zod": "^3.23.8"

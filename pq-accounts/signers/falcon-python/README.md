@@ -15,6 +15,10 @@ The signer is intended for local experimentation with the account contracts. The
 contains private signing material encoded as a Python pickle inside JSON; keep it local
 and do not treat it as a production wallet format.
 
+`demo-key.json` is a committed key used by the CLI quickstart so testers can skip
+keygen. Its private material is public in the repository — devnet only, never hold real
+funds with it.
+
 ## Setup
 
 Clone and prepare `falcon.py` separately:
