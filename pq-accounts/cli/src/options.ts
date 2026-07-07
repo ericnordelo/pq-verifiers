@@ -31,6 +31,11 @@ export type SignerOptions = {
   falconKey?: string;
 };
 
+/** Default JSON-RPC endpoint: PQ_RPC, or the local devnet. */
+export function defaultRpc(): string {
+  return process.env.PQ_RPC ?? "http://127.0.0.1:5050/rpc";
+}
+
 /** Path to the bundled Falcon Python signer, resolved relative to this package. */
 export function falconSignerScript(): string {
   const here = path.dirname(fileURLToPath(import.meta.url));

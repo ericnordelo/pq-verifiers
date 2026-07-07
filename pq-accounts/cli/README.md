@@ -21,7 +21,9 @@ ECDSA signing is implemented with Starknet.js. Falcon signing is delegated to an
 signer process so the CLI can interact with the accounts without reimplementing the
 Falcon sampler in TypeScript. The bundled signer in `../signers/falcon-python` is wired
 in with two flags (or environment variables): `--falcon-py`/`PQ_FALCON_PY` for the
-falcon.py checkout and `--falcon-key`/`PQ_FALCON_KEY` for the key file.
+falcon.py checkout and `--falcon-key`/`PQ_FALCON_KEY` for the key file. `--rpc`
+defaults from `PQ_RPC`, falling back to the local devnet
+(`http://127.0.0.1:5050/rpc`).
 
 The package also ships `dist/mcp.js`, a stdio MCP server exposing the same operations to
 LLM clients; see the MCP section in [`../USAGE.md`](../USAGE.md) for registration and

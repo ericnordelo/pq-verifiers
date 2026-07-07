@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command, Option } from "commander";
 import { buildCall, createAccount, createProvider } from "./starknet.js";
-import { parseFelt, parseFeltList, parseSignerOptions, printJson } from "./options.js";
+import { defaultRpc, parseFelt, parseFeltList, parseSignerOptions, printJson } from "./options.js";
 import { listSchemes, resolveScheme } from "./schemes/registry.js";
 import { resolveFunder } from "./devnet.js";
 import { ensureDeclared } from "./ops/declare.js";
@@ -124,7 +124,7 @@ withSchemeOptions(program.command("sign-hash"))
 
 withSchemeOptions(program.command("execute"))
   .description("Send an invoke transaction from an account address using the selected signature adapter.")
-  .requiredOption("--rpc <url>", "Starknet JSON-RPC endpoint.")
+  .option("--rpc <url>", "Starknet JSON-RPC endpoint. Env: PQ_RPC.", defaultRpc())
   .requiredOption("--account <address>", "Account contract address that will pay and validate the transaction.")
   .requiredOption("--to <address>", "Target contract address for the call.")
   .requiredOption("--entrypoint <name>", "Target entrypoint selector name.")
@@ -172,7 +172,7 @@ withSchemeOptions(program.command("execute"))
 
 withSchemeOptions(program.command("deploy-account"))
   .description("Deploy an account contract with Starknet.js deployAccount and the selected signature adapter.")
-  .requiredOption("--rpc <url>", "Starknet JSON-RPC endpoint.")
+  .option("--rpc <url>", "Starknet JSON-RPC endpoint. Env: PQ_RPC.", defaultRpc())
   .requiredOption("--class-hash <felt>", "Declared account class hash.")
   .option("--address-salt <felt>", "Deployment salt. Defaults to 0.", "0")
   .option("--constructor-calldata <felt...>", "Constructor calldata as repeated values or comma-separated felt lists.", [])
@@ -241,7 +241,7 @@ withSchemeOptions(program.command("deploy-account"))
 program
   .command("declare")
   .description("Declare an account class using a funded account (devnet predeployed by default).")
-  .requiredOption("--rpc <url>", "Starknet JSON-RPC endpoint.")
+  .option("--rpc <url>", "Starknet JSON-RPC endpoint. Env: PQ_RPC.", defaultRpc())
   .option("--scheme <key>", "Scheme whose account contract to declare.")
   .option("--contract <name>", "Contract name to declare instead of deriving it from --scheme.")
   .option("--funder-address <felt>", "Funded account address paying the declaration. Env: PQ_FUNDER_ADDRESS.")
@@ -275,7 +275,7 @@ program
 program
   .command("status")
   .description("Report deployment state, nonce, and STRK balance for an account address.")
-  .requiredOption("--rpc <url>", "Starknet JSON-RPC endpoint.")
+  .option("--rpc <url>", "Starknet JSON-RPC endpoint. Env: PQ_RPC.", defaultRpc())
   .requiredOption("--address <felt>", "Account address to inspect.")
   .action(async (options: { rpc: string; address: string }) => {
     printJson(await accountStatus(createProvider(options.rpc), parseFelt(options.address, "--address")));
@@ -286,7 +286,7 @@ program
   .description(
     "Devnet golden path: declare the account class, prefund the derived address, deploy, and send one transfer."
   )
-  .option("--rpc <url>", "Devnet JSON-RPC endpoint.", "http://127.0.0.1:5050/rpc")
+  .option("--rpc <url>", "Devnet JSON-RPC endpoint. Env: PQ_RPC.", defaultRpc())
   .option("--scheme <key>", "Scheme to demonstrate.", "falcon-512-shake")
   .option("--salt <felt>", "Deployment salt. Defaults to a random value.")
   .option("--falcon-py <path>", "falcon.py checkout for the bundled Falcon signer. Env: PQ_FALCON_PY.")

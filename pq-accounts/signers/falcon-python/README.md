@@ -25,6 +25,7 @@ Clone and prepare `falcon.py` separately:
 
 ```bash
 git clone https://github.com/tprest/falcon.py /path/to/falcon.py
+git -C /path/to/falcon.py checkout 5145a818c9512b4a443507d3375e75dae3076af6
 python3 -m pip install numpy pycryptodome beartype
 ```
 

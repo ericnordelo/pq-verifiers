@@ -1,3 +1,4 @@
+import path from "node:path";
 import { stark } from "starknet";
 import { createProvider } from "../starknet.js";
 import { mint, predeployedAccounts } from "../devnet.js";
@@ -65,7 +66,7 @@ function defaultSigner(schemeKey: string): { material: SignerMaterial; usedDemoK
   const keyFile = process.env.PQ_FALCON_KEY ?? demoKeyPath();
   return {
     material: falconSignerMaterial(falconPy, keyFile),
-    usedDemoKey: !process.env.PQ_FALCON_KEY
+    usedDemoKey: path.resolve(keyFile) === demoKeyPath()
   };
 }
 

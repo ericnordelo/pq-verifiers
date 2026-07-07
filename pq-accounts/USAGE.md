@@ -17,9 +17,19 @@ One-time setup:
 # Toolchain (pinned in ../.tool-versions): scarb + starknet-devnet, e.g. via asdf.
 # Node >= 20, and Python 3.9+ for the Falcon signer.
 git clone https://github.com/tprest/falcon.py /path/to/falcon.py
+git -C /path/to/falcon.py checkout 5145a818c9512b4a443507d3375e75dae3076af6
 python3 -m pip install numpy pycryptodome beartype
 (cd contracts && scarb build)
 (cd cli && npm install && npm run build)
+```
+
+Set up the environment (from `pq-accounts/`; the CLI and the MCP server read the same
+`PQ_*` variables, and flags always override them):
+
+```bash
+export PQ_FALCON_PY=/path/to/falcon.py
+export PQ_FALCON_KEY=$PWD/signers/falcon-python/demo-key.json   # INSECURE demo key, devnet only
+alias pq-accounts="node $PWD/cli/dist/index.js"
 ```
 
 Run a devnet in a second terminal, then the quickstart:
@@ -29,8 +39,7 @@ starknet-devnet --seed 0
 ```
 
 ```bash
-export PQ_FALCON_PY=/path/to/falcon.py
-node cli/dist/index.js quickstart --scheme falcon-512-shake
+pq-accounts quickstart --scheme falcon-512-shake
 ```
 
 The quickstart declares the scheme's account class (paid by a devnet predeployed
@@ -39,29 +48,27 @@ it, deploys the account — the deployment signature is Falcon-verified on-chain
 sends 1 STRK back to the funder. It prints the transaction hashes plus the L2 gas and
 fee each on-chain step consumed. Any scheme key from the reference table below works.
 
-It signs with the committed demo key
-([`signers/falcon-python/demo-key.json`](signers/falcon-python/demo-key.json)), whose
-private material is public: devnet only. To use your own key, generate one and export it:
-
-```bash
-python3 signers/falcon-python/falcon_signer.py keygen \
-  --falcon-py /path/to/falcon.py --key my-falcon-key.json
-export PQ_FALCON_KEY=$PWD/my-falcon-key.json
-```
-
 Send further transactions from the deployed account:
 
 ```bash
-export PQ_FALCON_KEY=${PQ_FALCON_KEY:-$PWD/signers/falcon-python/demo-key.json}
-node cli/dist/index.js execute \
-  --rpc http://127.0.0.1:5050/rpc --scheme falcon-512-shake \
-  --account 0xACCOUNT --to 0xTARGET --entrypoint transfer \
-  --calldata 0xRECIPIENT 0x1 0x0
-node cli/dist/index.js status --rpc http://127.0.0.1:5050/rpc --address 0xACCOUNT
+pq-accounts execute --scheme falcon-512-shake --account 0xACCOUNT \
+  --to 0xTARGET --entrypoint transfer --calldata 0xRECIPIENT 0x1 0x0
+pq-accounts status --address 0xACCOUNT
 ```
 
-`ecdsa-stark` needs no Python signer: `--private-key 0x...` replaces the `PQ_FALCON_*`
-variables (the quickstart generates a throwaway key by itself).
+To sign with your own key instead of the committed demo key
+([`signers/falcon-python/demo-key.json`](signers/falcon-python/demo-key.json), whose
+private material is public), generate one and re-point the variable:
+
+```bash
+python3 signers/falcon-python/falcon_signer.py keygen \
+  --falcon-py "$PQ_FALCON_PY" --key my-falcon-key.json
+export PQ_FALCON_KEY=$PWD/my-falcon-key.json
+```
+
+`ecdsa-stark` needs no Python signer: export `PQ_PRIVATE_KEY=0x...` (or pass
+`--private-key`) instead of the `PQ_FALCON_*` variables — the quickstart generates a
+throwaway key by itself.
 
 ## From an LLM (MCP)
 
@@ -86,7 +93,7 @@ Configuration is environment-only:
 
 | Variable | Meaning | Default |
 |---|---|---|
-| `PQ_RPC` | JSON-RPC endpoint | `http://127.0.0.1:5050/rpc` |
+| `PQ_RPC` | JSON-RPC endpoint (CLI `--rpc` default) | `http://127.0.0.1:5050/rpc` |
 | `PQ_SCHEME` | default scheme key | `falcon-512-shake` |
 | `PQ_FALCON_PY` | falcon.py checkout (required for Falcon schemes) | — |
 | `PQ_FALCON_KEY` | Falcon key file | the committed demo key |
@@ -144,22 +151,23 @@ The quickstart is devnet-only; on a public network the same commands run individ
 **Never use the demo key outside a devnet** — its private material is public.
 
 ```bash
-export PQ_FALCON_PY=/path/to/falcon.py PQ_FALCON_KEY=$PWD/my-falcon-key.json
-RPC=https://YOUR_SEPOLIA_RPC
+# Re-point the same environment at Sepolia with your own key and funder.
+export PQ_RPC=https://YOUR_SEPOLIA_RPC
+export PQ_FALCON_KEY=$PWD/my-falcon-key.json
+export PQ_FUNDER_ADDRESS=0xYOUR_ACCOUNT PQ_FUNDER_PRIVATE_KEY=0xYOUR_KEY
 
 # 1. Declare, paid by your funded Sepolia account.
-node cli/dist/index.js declare --rpc "$RPC" --scheme falcon-512-shake \
-  --funder-address 0xYOUR_ACCOUNT --funder-private-key 0xYOUR_KEY
+pq-accounts declare --scheme falcon-512-shake
 
 # 2. Derive the account address and prefund it with STRK (faucet or transfer).
-node cli/dist/index.js constructor-calldata --scheme falcon-512-shake \
+pq-accounts constructor-calldata --scheme falcon-512-shake \
   --class-hash 0xCLASS_HASH --salt 0x0
 
 # 3. Deploy, then transact.
-node cli/dist/index.js deploy-account --rpc "$RPC" --scheme falcon-512-shake \
+pq-accounts deploy-account --scheme falcon-512-shake \
   --class-hash 0xCLASS_HASH --address-salt 0x0
-node cli/dist/index.js execute --rpc "$RPC" --scheme falcon-512-shake \
-  --account 0xACCOUNT --to 0xTARGET --entrypoint transfer --calldata 0xRECIPIENT 0x1 0x0
+pq-accounts execute --scheme falcon-512-shake --account 0xACCOUNT \
+  --to 0xTARGET --entrypoint transfer --calldata 0xRECIPIENT 0x1 0x0
 ```
 
 Falcon validation consumes tens of millions of L2 gas per transaction — expect real
@@ -169,11 +177,11 @@ STRK fees on public networks.
 
 - Sign a hash in isolation (the exact `tx_info.signature` felts, no deploy needed):
   ```bash
-  node cli/dist/index.js sign-hash --scheme falcon-512-shake --hash 0xABC
+  pq-accounts sign-hash --scheme falcon-512-shake --hash 0xABC
   ```
 - List adapters (account contract names, expected felt counts):
   ```bash
-  node cli/dist/index.js accounts
+  pq-accounts accounts
   ```
 
 ## Notes
