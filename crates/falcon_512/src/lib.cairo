@@ -36,17 +36,17 @@ pub impl Falcon512Verifier of PqSignatureVerifier {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS {
             return false;
         }
-        let h_ntt = match packing::unpack_512(public_key) {
+        let h_ntt = match packing::unpack_512_u16(public_key) {
             Some(v) => v,
             None => { return false; },
         };
-        let s1 = match packing::unpack_512(signature.slice(0, 29)) {
+        let s1 = match packing::unpack_512_u16(signature.slice(0, 29)) {
             Some(v) => v,
             None => { return false; },
         };
         let salt_a = *signature.at(29);
         let salt_b = *signature.at(30);
-        let mul_hint = match packing::unpack_512(signature.slice(31, 29)) {
+        let mul_hint = match packing::unpack_512_u16(signature.slice(31, 29)) {
             Some(v) => v,
             None => { return false; },
         };
@@ -54,7 +54,7 @@ pub impl Falcon512Verifier of PqSignatureVerifier {
             Some(v) => v,
             None => { return false; },
         };
-        falcon::verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
+        falcon::verify_512_with_hint_u16(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
     }
 }
 
@@ -66,11 +66,11 @@ pub impl Falcon512DirectVerifier of PqSignatureVerifier {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS_DIRECT {
             return false;
         }
-        let h_ntt = match packing::unpack_512(public_key) {
+        let h_ntt = match packing::unpack_512_u16(public_key) {
             Some(v) => v,
             None => { return false; },
         };
-        let s1 = match packing::unpack_512(signature.slice(0, 29)) {
+        let s1 = match packing::unpack_512_u16(signature.slice(0, 29)) {
             Some(v) => v,
             None => { return false; },
         };
@@ -80,7 +80,7 @@ pub impl Falcon512DirectVerifier of PqSignatureVerifier {
             Some(v) => v,
             None => { return false; },
         };
-        falcon::verify_512_direct(s1.span(), h_ntt.span(), msg_point.span())
+        falcon::verify_512_direct_u16(s1.span(), h_ntt.span(), msg_point.span())
     }
 }
 
@@ -95,17 +95,17 @@ pub impl Falcon512ShakeVerifier of PqSignatureVerifier {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS {
             return false;
         }
-        let h_ntt = match packing::unpack_512(public_key) {
+        let h_ntt = match packing::unpack_512_u16(public_key) {
             Some(v) => v,
             None => { return false; },
         };
-        let s1 = match packing::unpack_512(signature.slice(0, 29)) {
+        let s1 = match packing::unpack_512_u16(signature.slice(0, 29)) {
             Some(v) => v,
             None => { return false; },
         };
         let salt_a = *signature.at(29);
         let salt_b = *signature.at(30);
-        let mul_hint = match packing::unpack_512(signature.slice(31, 29)) {
+        let mul_hint = match packing::unpack_512_u16(signature.slice(31, 29)) {
             Some(v) => v,
             None => { return false; },
         };
@@ -113,7 +113,7 @@ pub impl Falcon512ShakeVerifier of PqSignatureVerifier {
             Some(v) => v,
             None => { return false; },
         };
-        falcon::verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
+        falcon::verify_512_with_hint_u16(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
     }
 }
 
@@ -128,17 +128,17 @@ pub impl Falcon512PoseidonVerifier of PqSignatureVerifier {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS {
             return false;
         }
-        let h_ntt = match packing::unpack_512(public_key) {
+        let h_ntt = match packing::unpack_512_u16(public_key) {
             Some(v) => v,
             None => { return false; },
         };
-        let s1 = match packing::unpack_512(signature.slice(0, 29)) {
+        let s1 = match packing::unpack_512_u16(signature.slice(0, 29)) {
             Some(v) => v,
             None => { return false; },
         };
         let salt_a = *signature.at(29);
         let salt_b = *signature.at(30);
-        let mul_hint = match packing::unpack_512(signature.slice(31, 29)) {
+        let mul_hint = match packing::unpack_512_u16(signature.slice(31, 29)) {
             Some(v) => v,
             None => { return false; },
         };
@@ -147,7 +147,7 @@ pub impl Falcon512PoseidonVerifier of PqSignatureVerifier {
             Some(v) => v,
             None => { return false; },
         };
-        falcon::verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
+        falcon::verify_512_with_hint_u16(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
     }
 }
 
@@ -163,11 +163,11 @@ pub impl Falcon512ShakeDirectVerifier of PqSignatureVerifier {
         if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS_DIRECT {
             return false;
         }
-        let h_ntt = match packing::unpack_512(public_key) {
+        let h_ntt = match packing::unpack_512_u16(public_key) {
             Some(v) => v,
             None => { return false; },
         };
-        let s1 = match packing::unpack_512(signature.slice(0, 29)) {
+        let s1 = match packing::unpack_512_u16(signature.slice(0, 29)) {
             Some(v) => v,
             None => { return false; },
         };
@@ -177,6 +177,6 @@ pub impl Falcon512ShakeDirectVerifier of PqSignatureVerifier {
             Some(v) => v,
             None => { return false; },
         };
-        falcon::verify_512_direct(s1.span(), h_ntt.span(), msg_point.span())
+        falcon::verify_512_direct_u16(s1.span(), h_ntt.span(), msg_point.span())
     }
 }

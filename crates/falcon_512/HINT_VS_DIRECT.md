@@ -49,11 +49,11 @@ so the same signer produces both; the hint form only appends `mul_hint`.
 | On-chain cost | lower | higher (see below) |
 
 **Cost.** Computing the product on-chain (direct) costs more than checking a supplied one
-(hint). The premium is a fixed amount of transform work — about **+4.5M L2 gas and +45k
-steps** — regardless of the hash-to-point. As a percentage it therefore depends on the
-base: roughly **+17%** on the cheap BLAKE2s variant, but only **+7% gas / +10% steps** on
-the SHAKE-256 variant, whose cost is dominated by Keccak. Exact per-variant figures are in
-the [efficiency table](README.md#current-efficiency).
+(hint). The premium is a fixed amount of transform work — **10,196,120 additional L2 gas
+and 100,927 additional steps** — regardless of the hash-to-point. As a percentage it depends
+on the base: **+79.6% gas / +96.3% steps** on the BLAKE2s variant, but **+20.3% gas /
++32.3% steps** on the SHAKE-256 variant, whose cost is dominated by Keccak. Exact
+per-variant figures are in the [efficiency table](README.md#current-efficiency).
 
 ## What it does not affect
 

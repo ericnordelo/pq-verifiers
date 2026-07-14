@@ -8,6 +8,7 @@ authors.workspace = true
 
 [dependencies]
 starknet.workspace = true
+corelib_imports = "0.1.2"
 
 [dev-dependencies]
 snforge_std.workspace = true

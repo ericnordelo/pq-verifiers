@@ -17,8 +17,9 @@ argument, kept executable:
      unreduced-product INTT path used by the direct Falcon variant;
   3. asserts no intermediate value ever reaches 2^126 (so felt252 arithmetic never
      wraps and every reduction input fits u128);
-  4. derives the bit-reversal permutation and the I2-scaled inverse root tables,
-     and (with --emit) writes them as generated Cairo constants.
+  4. derives the bit-reversal permutation, the I2-scaled inverse root tables, and
+     a fully unrolled Falcon-512 forward transform, then (with --emit) writes the
+     formatter-clean generated Cairo sources.
 
 Exits non-zero on any mismatch.
 """
@@ -26,12 +27,15 @@ Exits non-zero on any mismatch.
 import argparse
 import random
 import re
+import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 Q = 12289
 SQR1 = 1479  # square root of -1 mod q
 I2 = 6145  # inverse of 2 mod q
+STARK_PRIME = 2**251 + 17 * 2**192 + 1
 DEGREES = [4, 8, 16, 32, 64, 128, 256, 512]
 ALL_SIZES = [2] + DEGREES
 
@@ -50,6 +54,7 @@ ROOTS_LOCATIONS = [
 SCALED_OUT = REPO / "crates/ntt/src/roots_scaled.cairo"
 FELT_OUT = REPO / "crates/ntt/src/roots_felt.cairo"
 BITREV_OUT = REPO / "crates/ntt/src/bitrev.cairo"
+FAST_FALCON512_OUT = REPO / "crates/ntt/src/falcon512_fast.cairo"
 
 FWD_NAME = {n: f"phi{2 * n}_roots_zq" for n in ALL_SIZES}
 INV_NAME = {n: f"phi{2 * n}_roots_zq_inv" for n in ALL_SIZES}
@@ -98,6 +103,96 @@ def intt_rec(f_ntt, tables):
         f1.append(I2 * (even - odd) * r_inv % Q)
     f0, f1 = intt_rec(f0, tables), intt_rec(f1, tables)
     return [c for pair in zip(f0, f1) for c in pair]
+
+
+# --- Fully unrolled Falcon-512 forward transform ---
+
+
+class ConcreteOps:
+    """Integer operations for the generated circuit's unreduced arithmetic."""
+
+    @staticmethod
+    def mul_const(value, constant):
+        return value * constant
+
+    @staticmethod
+    def add(left, right):
+        return left + right
+
+    @staticmethod
+    def sub(left, right):
+        return left - right
+
+
+@dataclass(frozen=True)
+class CairoValue:
+    """A generated Cairo local together with its exact inclusive integer bounds."""
+
+    name: str
+    low: int
+    high: int
+
+
+class CairoOps:
+    """Trace straight-line felt252 operations while proving their integer bounds."""
+
+    def __init__(self):
+        self.lines = []
+        self.next_id = 0
+        self.low = 0
+        self.high = Q - 1
+
+    def _record(self, expression, low, high):
+        name = f"v{self.next_id}"
+        self.next_id += 1
+        self.lines.append(f"    let {name} = {expression};")
+        self.low = min(self.low, low)
+        self.high = max(self.high, high)
+        return CairoValue(name, low, high)
+
+    def mul_const(self, value, constant):
+        return self._record(
+            f"{value.name} * {constant}", value.low * constant, value.high * constant
+        )
+
+    def add(self, left, right):
+        return self._record(
+            f"{left.name} + {right.name}", left.low + right.low, left.high + right.high
+        )
+
+    def sub(self, left, right):
+        return self._record(
+            f"{left.name} - {right.name}", left.low - right.high, left.high - right.low
+        )
+
+
+def ntt_unrolled(f, tables, ops):
+    """Recursive Falcon NTT whose operation graph is fully expanded at generation time.
+
+    No modular reduction occurs inside the graph. A single reduction per output is
+    sufficient because every operation is over the integers modulo q and the graph's
+    exact bounds fit the felt252/u128 conversion used by the generated Cairo wrapper.
+    """
+    n = len(f)
+    if n == 2:
+        product = ops.mul_const(f[1], SQR1)
+        return [ops.add(f[0], product), ops.sub(f[0], product)]
+
+    even = ntt_unrolled(f[0::2], tables, ops)
+    odd = ntt_unrolled(f[1::2], tables, ops)
+    out = []
+    for left, right, root in zip(even, odd, tables[FWD_NAME[n]]):
+        product = ops.mul_const(right, root)
+        out.append(ops.add(left, product))
+        out.append(ops.sub(left, product))
+    return out
+
+
+def shift_for_bound(low):
+    """Smallest non-negative multiple of q that offsets an inclusive lower bound."""
+    if low >= 0:
+        return 0
+    return ((-low + Q - 1) // Q) * Q
 
 
 # --- Iterative lazy-reduction models (exact mirrors of the Cairo engine) ---
@@ -323,6 +418,32 @@ def check_schedule(tables):
     )
 
 
+def check_falcon512_unrolled(tables):
+    """Prove the generated straight-line graph against the modular reference."""
+    rng = random.Random(512)
+    samples = sample_inputs(512, rng)
+    for f in samples:
+        raw = ntt_unrolled(f, tables, ConcreteOps())
+        expect = ntt_rec(f, tables)
+        assert [value % Q for value in raw] == expect, "unrolled NTT != reference"
+
+    trace = CairoOps()
+    inputs = [CairoValue(f"f{i}", 0, Q - 1) for i in range(512)]
+    outputs = ntt_unrolled(inputs, tables, trace)
+    shift = shift_for_bound(trace.low)
+    assert shift % Q == 0
+    assert min(value.low for value in outputs) + shift >= 0
+    shifted_high = max(value.high for value in outputs) + shift
+    assert shifted_high < 2**128, "generated output does not fit u128 after shift"
+    assert max(abs(trace.low), trace.high) < STARK_PRIME, (
+        "generated felt arithmetic exceeds the Stark field"
+    )
+    print(
+        "ok: fully unrolled Falcon-512 NTT matches the reference "
+        f"({trace.next_id} operations, shifted outputs < 2^{shifted_high.bit_length()})"
+    )
+
+
 # --- Emission ---
 
 HEADER = """\
@@ -420,6 +541,146 @@ def emit_bitrev():
     print(f"wrote {BITREV_OUT.relative_to(REPO)}")
 
 
+def wrapped(items, indent="    ", width=100):
+    """Format a comma-separated generated list without depending on a Cairo formatter."""
+    lines = []
+    current = indent
+    for item in items:
+        token = f"{item},"
+        if len(current) + len(token) + 1 > width and current.strip():
+            lines.append(current.rstrip())
+            current = indent + token + " "
+        else:
+            current += token + " "
+    if current.strip():
+        lines.append(current.rstrip())
+    return "\n".join(lines)
+
+
+def emit_falcon512_fast(tables):
+    trace = CairoOps()
+    inputs = [CairoValue(f"f{i}", 0, Q - 1) for i in range(512)]
+    outputs = ntt_unrolled(inputs, tables, trace)
+    shift = shift_for_bound(trace.low)
+    shifted_high = max(value.high for value in outputs) + shift
+    assert min(value.low for value in outputs) + shift >= 0
+    assert shifted_high < 2**128
+
+    input_params = [f"f{i}: felt252" for i in range(512)]
+    input_names = [f"f{i}" for i in range(512)]
+    reduced_names = [f"r{i}" for i in range(512)]
+    return_type = "(" + ", ".join("Falcon512Zq" for _ in outputs) + ")"
+
+    out = [
+        HEADER.format(
+            what=(
+                "Fully unrolled Falcon-512 forward NTT for n = 512 and q = 12289.\n"
+                "// The operation graph and its bounds are derived from roots.cairo; each\n"
+                "// output is reduced once after the straight-line felt252 arithmetic."
+            )
+        ),
+        "\n//! Generated Falcon-512 forward NTT.\n//!\n",
+        "//! Inputs are 512 coefficients in `[0, 12289)`. The unchecked public entry points\n",
+        "//! rely on callers to enforce that precondition; the fixed operation graph computes\n",
+        "//! the Falcon evaluation order and returns 512 reduced coefficients.\n\n",
+        "use corelib_imports::bounded_int::{\n",
+        "    BoundedInt, DivRemHelper, UnitInt, bounded_int_div_rem, upcast,\n",
+        "};\n",
+        "use corelib_imports::integer::{U128sFromFelt252Result, u128s_from_felt252};\n\n",
+        "type Falcon512Zq = BoundedInt<0, 12288>;\n",
+        "type Falcon512Q = UnitInt<12289>;\n",
+        "type U128AsBounded = BoundedInt<0, 340282366920938463463374607431768211455>;\n\n",
+        "const FALCON512_Q_NZ: NonZero<Falcon512Q> = 12289;\n",
+        f"const SHIFT: felt252 = {shift};\n\n",
+        "impl Falcon512FastDivRemImpl of DivRemHelper<U128AsBounded, Falcon512Q> {\n",
+        "    type DivT = BoundedInt<0, 27689996494502275487295516920153650>;\n",
+        "    type RemT = Falcon512Zq;\n",
+        "}\n\n",
+        "#[inline(always)]\n",
+        "fn felt252_as_u128(value: felt252) -> u128 {\n",
+        "    // Exact generated bounds put canonical shifted outputs below 2^128.\n",
+        "    match u128s_from_felt252(value) {\n",
+        "        U128sFromFelt252Result::Narrow(low) => low,\n",
+        "        U128sFromFelt252Result::Wide((_, low)) => low,\n",
+        "    }\n",
+        "}\n\n",
+        "#[inline(always)]\n",
+        "fn ntt_falcon512_fast_inner(\n",
+        wrapped(input_params, indent="    "),
+        f"\n) -> {return_type} {{\n",
+        "\n".join(trace.lines),
+        "\n",
+    ]
+
+    for output, reduced in zip(outputs, reduced_names):
+        out.extend(
+            [
+                f"    let {reduced}_bounded: U128AsBounded = ",
+                f"upcast(felt252_as_u128({output.name} + SHIFT));\n",
+                f"    let (_, {reduced}) = ",
+                f"bounded_int_div_rem({reduced}_bounded, FALCON512_Q_NZ);\n",
+            ]
+        )
+    out.extend(["    (\n", wrapped(reduced_names, indent="        "), "\n    )\n}\n\n"])
+
+    out.extend(
+        [
+            "/// Compute the Falcon-512 forward NTT for 512 reduced coefficients without\n",
+            "/// validating each coefficient.\n",
+            "///\n",
+            "/// Inputs must be in `[0, 12289)`; violating that precondition may return an\n",
+            "/// invalid transform. Outputs are in the Falcon/falcon.py evaluation order and\n",
+            "/// reduced to the same range.\n",
+            "pub fn ntt_falcon512_fast_unchecked(mut f: Span<felt252>) -> Array<felt252> {\n",
+            "    assert(f.len() == 512, 'fast NTT: bad length');\n",
+            "    let boxed = f.multi_pop_front::<512>().unwrap();\n",
+            "    let [\n",
+            wrapped(input_names, indent="        "),
+            "\n    ] = boxed.unbox();\n",
+            "    let (\n",
+            wrapped(reduced_names, indent="        "),
+            "\n    ) = ntt_falcon512_fast_inner(\n",
+            wrapped(input_names, indent="        "),
+            "\n    );\n",
+            "    array![\n",
+            wrapped([f"upcast({name})" for name in reduced_names], indent="        "),
+            "\n    ]\n",
+            "}\n\n",
+            "/// Compute the Falcon-512 forward NTT from canonical `u16` coefficients without\n",
+            "/// validating each coefficient.\n",
+            "///\n",
+            "/// Inputs must be in `[0, 12289)`; violating that precondition may return an\n",
+            "/// invalid transform. Outputs are in the Falcon/falcon.py evaluation order and\n",
+            "/// reduced to the same range.\n",
+            "pub fn ntt_falcon512_fast_u16_unchecked(mut f: Span<u16>) -> Array<u16> {\n",
+            "    assert(f.len() == 512, 'fast NTT: bad length');\n",
+            "    let boxed = f.multi_pop_front::<512>().unwrap();\n",
+            "    let [\n",
+            wrapped(input_names, indent="        "),
+            "\n    ] = boxed.unbox();\n",
+            "    let (\n",
+            wrapped(reduced_names, indent="        "),
+            "\n    ) = ntt_falcon512_fast_inner(\n",
+            wrapped([f"{name}.into()" for name in input_names], indent="        "),
+            "\n    );\n",
+            "    array![\n",
+            wrapped([f"upcast({name})" for name in reduced_names], indent="        "),
+            "\n    ]\n",
+            "}\n",
+        ]
+    )
+
+    FAST_FALCON512_OUT.write_text("".join(out))
+    print(f"wrote {FAST_FALCON512_OUT.relative_to(REPO)}")
+
+
+def format_generated():
+    """Apply the repository's pinned Cairo formatter to every emitted source."""
+    for path in (SCALED_OUT, FELT_OUT, BITREV_OUT, FAST_FALCON512_OUT):
+        subprocess.run(["scarb", "fmt", str(path)], cwd=REPO, check=True)
+    print("formatted generated Cairo sources")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -438,11 +699,14 @@ def main():
     check_lazy_forward(tables)
     check_negacyclic(tables)
     check_schedule(tables)
+    check_falcon512_unrolled(tables)
 
     if args.emit:
         emit_scaled(tables)
         emit_felt_roots(tables)
         emit_bitrev()
+        emit_falcon512_fast(tables)
+        format_generated()
     print("all checks passed")
 
 

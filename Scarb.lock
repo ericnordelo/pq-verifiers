@@ -2,6 +2,12 @@
 version = 1
 
 [[package]]
+name = "corelib_imports"
+version = "0.1.3"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:1dbf8982484a6a085a143f2352dfbc716261c50c60551eb03bff5f0167260ad9"
+
+[[package]]
 name = "openzeppelin_testing"
 version = "6.7.0"
 source = "registry+https://scarbs.xyz/"
@@ -32,6 +38,7 @@ dependencies = [
 name = "pqbench_falcon_512"
 version = "0.1.0"
 dependencies = [
+ "corelib_imports",
  "pqbench_interface",
  "pqbench_ntt",
  "snforge_std",
@@ -53,6 +60,7 @@ dependencies = [
 name = "pqbench_ntt"
 version = "0.1.0"
 dependencies = [
+ "corelib_imports",
  "snforge_std",
 ]
 

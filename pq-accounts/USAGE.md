@@ -131,32 +131,31 @@ from the scheme key in each request.
 
 ## What transactions cost
 
-The repository's benchmark tables price measured VM resources (steps, builtins) with the
-official gas table, and that table — like the 100,000,000-gas validation budget — is
-unchanged as of Starknet 0.14.3. Transaction **fees** are metered differently: for
-Sierra >= 1.7 classes the receipt's L2 gas comes from the Sierra gas counter compiled
-into the class, which runs roughly twice the resource-priced values on this workload.
-Both meters are real; the first is the resource comparison between schemes, the second
-is what you pay. All six accounts deploy and transact within the protocol's validation
-budget on Starknet 0.14.3.
+The repository's benchmark tables price measured VM resources (steps and builtins) with
+the protocol gas table. Transaction **fees** use a separate meter: for Sierra >= 1.7
+classes the receipt's L2 gas comes from the Sierra gas counter compiled into the class.
+Both meters are real; the first compares verifier resources, while the second determines
+what a transaction pays. `quickstart` prints the live deploy and invoke receipt gas and
+fee for the class it just declared.
 
-Receipt values measured on Starknet 0.14.3 (devnet, `quickstart` runs; the demo invoke
-is a single STRK transfer — fee = L2 gas x the network L2 gas price, e.g. ~0.054 STRK
-for the BLAKE2s invoke at devnet's 1 gwei-FRI price):
+The table below was measured with `quickstart` against a local devnet on Starknet
+0.14.3, one run per scheme, from the classes in the current tree. The demo invoke is a
+single STRK transfer, and fee equals L2 gas times the network's L2 gas price.
 
 | Account | Invoke L2 gas | Deploy L2 gas |
 |---|--:|--:|
 | `ecdsa-stark` | 1,207,040 | 1,097,360 |
-| `falcon-512` (BLAKE2s) | 54,424,000 | 68,480,800 |
-| `falcon-512-direct` | 55,075,520 | 69,092,320 |
-| `falcon-512-poseidon` | 56,464,000 | 70,560,800 |
-| `falcon-512-shake` (standard) | 124,504,000 | 136,640,800 |
-| `falcon-512-shake-direct` (standard, no hint) | 124,355,520 | 136,492,320 |
+| `falcon-512` (BLAKE2s) | 31,144,000 | 45,320,800 |
+| `falcon-512-direct` | 41,755,520 | 55,892,320 |
+| `falcon-512-poseidon` | 31,144,000 | 45,280,800 |
+| `falcon-512-shake` (standard) | 140,024,000 | 152,160,800 |
+| `falcon-512-shake-direct` (standard, no hint) | 139,875,520 | 136,492,320 |
 
 About 1.1M gas of every transaction is fixed protocol overhead (the `ecdsa-stark` rows
-are nearly all overhead). The SHAKE values vary a few percent from one signature to the
-next (its hash-to-point permutation count depends on the salt). The `quickstart` and the
-MCP tools print these values from the live receipts of each run.
+are nearly all overhead). The SHAKE rows move between runs in steps of 7,760,000 gas —
+one Keccak permutation more or fewer in the salt-dependent hash-to-point (observed
+invoke range for `falcon-512-shake`: 124,504,000–140,024,000). The `quickstart` and MCP
+tools print live values from each run's receipts.
 
 ## Public networks and browser dapps
 
