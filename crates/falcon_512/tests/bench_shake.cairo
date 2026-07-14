@@ -1,5 +1,5 @@
-//! Benchmark scenario for the Falcon-512 verifier with the STANDARD SHAKE-256
-//! hash-to-point (hint-based).
+//! Benchmark scenarios for the Falcon-512 verifier with the STANDARD SHAKE-256
+//! hash-to-point (hint and direct).
 //!
 //! Measurement method (paired-test subtraction): the harness runs `bench_verify_*` and
 //! `bench_baseline_*`, which build IDENTICAL inputs; only the former calls `verify`. The
@@ -12,8 +12,8 @@
 //! length is rejected — with the message/salt cases specifically exercising the
 //! SHAKE-256 hash-to-point path.
 
-use pqbench_falcon_512::Falcon512ShakeVerifier;
 use pqbench_falcon_512::fixtures::shake::{msg, public_key, signature};
+use pqbench_falcon_512::{Falcon512ShakeDirectVerifier, Falcon512ShakeVerifier};
 use pqbench_interface::PqSignatureVerifier;
 
 /// Builds the inputs but does NOT verify — the subtraction baseline.
@@ -78,4 +78,40 @@ fn test_falcon_512_shake_rejects_bad_lengths() {
     let sig = signature();
     assert!(!Falcon512ShakeVerifier::verify(msg(), pk.span().slice(0, 28), sig.span()));
     assert!(!Falcon512ShakeVerifier::verify(msg(), pk.span(), sig.span().slice(0, 59)));
+}
+
+/// The direct-variant signature: the 31-felt `s1 || salt` prefix of the hint fixture.
+fn signature_direct() -> Array<felt252> {
+    let mut out: Array<felt252> = array![];
+    let mut prefix = signature().span().slice(0, 31);
+    while let Some(f) = prefix.pop_front() {
+        out.append(*f);
+    }
+    out
+}
+
+/// Builds the direct-variant inputs but does NOT verify — the subtraction baseline.
+#[test]
+fn bench_baseline_falcon_512_shake_direct() {
+    let pk = public_key();
+    let sig = signature_direct();
+    assert!(pk.len() == 29 && sig.len() == 31);
+}
+
+/// Builds the direct-variant inputs and verifies — the measured scenario.
+#[test]
+fn bench_verify_falcon_512_shake_direct() {
+    let pk = public_key();
+    let sig = signature_direct();
+    let valid = Falcon512ShakeDirectVerifier::verify(msg(), pk.span(), sig.span());
+    assert!(valid);
+}
+
+#[test]
+fn test_falcon_512_shake_direct_rejects_wrong_message() {
+    // Exercises the SHAKE-256 hash-to-point over the direct core.
+    let bad = Falcon512ShakeDirectVerifier::verify(
+        'OTHER_MSG', public_key().span(), signature_direct().span(),
+    );
+    assert!(!bad);
 }

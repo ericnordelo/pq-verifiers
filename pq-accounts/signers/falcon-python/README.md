@@ -6,9 +6,9 @@ reimplementing Falcon signing in TypeScript. It wraps a local checkout of
 accounts, and signs Starknet transaction hashes with the hash-to-point construction of
 the requested scheme, each mirroring its on-chain counterpart in `crates/falcon_512`:
 BLAKE2s for `falcon-512` and `falcon-512-direct`, the standard SHAKE-256 of the Falcon
-specification for `falcon-512-shake`, and the native-Poseidon squeeze for
-`falcon-512-poseidon` (verified against the `core::poseidon` known-answer vector before
-every use). Before returning a signature it re-checks the exact on-chain acceptance
+specification for `falcon-512-shake` and `falcon-512-shake-direct`, and the native-Poseidon
+squeeze for `falcon-512-poseidon` (verified against the `core::poseidon` known-answer vector
+before every use). Before returning a signature it re-checks the exact on-chain acceptance
 condition (verification equation and centered norm bound).
 
 The signer is intended for local experimentation with the account contracts. The key file
@@ -57,7 +57,7 @@ node pq-accounts/cli/dist/index.js constructor-calldata \
 One key file serves every Falcon variant — the keypair is hash-to-point agnostic, and
 the signer selects the construction from the scheme key in each request. It returns the
 60-felt hint signature for `falcon-512`, `falcon-512-shake`, and `falcon-512-poseidon`,
-and the 31-felt `s1 || salt` prefix for `falcon-512-direct`.
+and the 31-felt `s1 || salt` prefix for `falcon-512-direct` and `falcon-512-shake-direct`.
 
 ## JSON Protocol
 

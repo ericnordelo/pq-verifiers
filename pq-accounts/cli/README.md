@@ -14,6 +14,8 @@ The built-in account descriptors are:
   signature felts.
 - `falcon-512-shake`: `Falcon512ShakeAccount`, with 29 public-key felts and 60 signature
   felts (standard SHAKE-256 hash-to-point).
+- `falcon-512-shake-direct`: `Falcon512ShakeDirectAccount`, with 29 public-key felts and 31
+  signature felts (standard SHAKE-256 hash-to-point, no hint).
 - `falcon-512-poseidon`: `Falcon512PoseidonAccount`, with 29 public-key felts and 60
   signature felts (native-Poseidon hash-to-point).
 

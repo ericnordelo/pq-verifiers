@@ -4,8 +4,9 @@
 One NTRU keypair serves every Falcon account variant: the variants differ only in the
 hash-to-point that derives the message point, which this signer selects from the scheme
 key in each request — BLAKE2s for `falcon-512` / `falcon-512-direct`, the standard
-SHAKE-256 of the Falcon specification for `falcon-512-shake`, and the native-Poseidon
-squeeze for `falcon-512-poseidon`. Each construction mirrors its on-chain counterpart in
+SHAKE-256 of the Falcon specification for `falcon-512-shake` / `falcon-512-shake-direct`,
+and the native-Poseidon squeeze for `falcon-512-poseidon`. The `-direct` schemes return the
+31-felt `s1 || salt` layout (no hint). Each construction mirrors its on-chain counterpart in
 `crates/falcon_512` exactly.
 """
 
@@ -127,11 +128,12 @@ H2P_BY_SCHEME: dict[str, Callable[[int, bytes], list[int]]] = {
     "falcon-512": h2p_blake2s,
     "falcon-512-direct": h2p_blake2s,
     "falcon-512-shake": h2p_shake256,
+    "falcon-512-shake-direct": h2p_shake256,
     "falcon-512-poseidon": h2p_poseidon,
 }
 
 # Schemes whose signature is the 31-felt `s1 || salt` prefix of the hint layout.
-DIRECT_SCHEMES = {"falcon-512-direct"}
+DIRECT_SCHEMES = {"falcon-512-direct", "falcon-512-shake-direct"}
 
 
 def pack_512(vals: list[int]) -> list[int]:

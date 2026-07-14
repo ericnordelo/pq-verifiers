@@ -122,6 +122,7 @@ The same variables configure the CLI (flags take precedence).
 | `falcon-512` | `Falcon512Account` | 60 felts (hint layout) | BLAKE2s |
 | `falcon-512-direct` | `Falcon512DirectAccount` | 31 felts (`s1 \|\| salt`) | BLAKE2s |
 | `falcon-512-shake` | `Falcon512ShakeAccount` | 60 felts (hint layout) | standard SHAKE-256 |
+| `falcon-512-shake-direct` | `Falcon512ShakeDirectAccount` | 31 felts (`s1 \|\| salt`) | standard SHAKE-256 |
 | `falcon-512-poseidon` | `Falcon512PoseidonAccount` | 60 felts (hint layout) | native Poseidon |
 
 All Falcon accounts store a 29-felt packed public key. One key file serves every Falcon
@@ -136,7 +137,7 @@ unchanged as of Starknet 0.14.3. Transaction **fees** are metered differently: f
 Sierra >= 1.7 classes the receipt's L2 gas comes from the Sierra gas counter compiled
 into the class, which runs roughly twice the resource-priced values on this workload.
 Both meters are real; the first is the resource comparison between schemes, the second
-is what you pay. All five accounts deploy and transact within the protocol's validation
+is what you pay. All six accounts deploy and transact within the protocol's validation
 budget on Starknet 0.14.3.
 
 Receipt values measured on Starknet 0.14.3 (devnet, `quickstart` runs; the demo invoke
@@ -150,6 +151,7 @@ for the BLAKE2s invoke at devnet's 1 gwei-FRI price):
 | `falcon-512-direct` | 55,075,520 | 69,092,320 |
 | `falcon-512-poseidon` | 56,464,000 | 70,560,800 |
 | `falcon-512-shake` (standard) | 124,504,000 | 136,640,800 |
+| `falcon-512-shake-direct` (standard, no hint) | 124,355,520 | 136,492,320 |
 
 About 1.1M gas of every transaction is fixed protocol overhead (the `ecdsa-stark` rows
 are nearly all overhead). The SHAKE values vary a few percent from one signature to the

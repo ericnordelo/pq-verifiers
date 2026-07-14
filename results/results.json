@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-07-06 21:01",
+    "generated": "2026-07-14 12:46",
     "toolchain": {
       "scarb": "2.18.0",
       "snforge": "0.59.0",
@@ -49,8 +49,8 @@
       "verify_l2_gas": 30855,
       "verify_steps": 152,
       "verify_builtins": {
-        "range_check": 7,
-        "ec_op": 3
+        "ec_op": 3,
+        "range_check": 7
       },
       "calldata_l2_gas": 15360,
       "pct_of_gas_cap": 0.0309,
@@ -503,8 +503,8 @@
       "verify_l2_gas": 63965138,
       "verify_steps": 447823,
       "verify_builtins": {
-        "range_check": 80458,
-        "bitwise": 21816
+        "bitwise": 21816,
+        "range_check": 80458
       },
       "calldata_l2_gas": 455680,
       "pct_of_gas_cap": 63.9651,
@@ -672,6 +672,196 @@
       ]
     },
     {
+      "key": "falcon_512_shake_direct",
+      "label": "Falcon-512 SHAKE-256 direct (standard, no hint)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_shake_direct",
+      "baseline_test": "bench_baseline_falcon_512_shake_direct",
+      "validate_test": "bench_validate_falcon_512_shake_direct",
+      "validate_baseline_test": "bench_validate_base_falcon_512_shake_direct",
+      "contract": "Falcon512ShakeDirectAccount",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); standard SHAKE-256 hash-to-point",
+      "on_chain_hash": "SHAKE-256 hash-to-point (on-chain, pure-Cairo Keccak-f[1600])",
+      "offchain_prep": "none beyond signing (no hint)",
+      "sig_felts": 31,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "The closest on-chain match to a bare standard Falcon signature: standard SHAKE-256 hash-to-point with the hint-free direct core (s1*h computed on-chain), so only the 31-felt s1||salt is supplied and the input trust surface is minimal. The FIPS signature carries no hint, so this variant mirrors it most faithfully. The most expensive Falcon variant here (SHAKE hash over the direct core), still within both validation caps.",
+      "measured": true,
+      "verify_l2_gas": 68471798,
+      "verify_steps": 492859,
+      "verify_builtins": {
+        "bitwise": 21816,
+        "range_check": 80961
+      },
+      "calldata_l2_gas": 307200,
+      "pct_of_gas_cap": 68.4718,
+      "pct_of_step_cap": 49.2859,
+      "fits_gas_cap": true,
+      "fits_step_cap": true,
+      "validate_l2_gas": 69990948,
+      "validate_steps": 506638,
+      "validate_pct_of_gas_cap": 69.9909,
+      "validate_pct_of_step_cap": 50.6638,
+      "validate_fits": true,
+      "class_felts": 16343,
+      "class_bytes": 412911,
+      "verify_profile": [
+        {
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_f1600[433-3957]{NotSpecialized, NotSpecialized, NonZero(18446744073709551616), }",
+          "flat_steps": 198315,
+          "flat_pct": 40.18,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct[1541-2345]",
+          "flat_steps": 31849,
+          "flat_pct": 6.45,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_shake_512[2995-3122]",
+          "flat_steps": 31251,
+          "flat_pct": 6.33,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[519-1227]",
+          "flat_steps": 27756,
+          "flat_pct": 5.62,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[1722-1989]",
+          "flat_steps": 21888,
+          "flat_pct": 4.43,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[527-1829]",
+          "flat_steps": 20460,
+          "flat_pct": 4.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[2018-2293]",
+          "flat_steps": 19328,
+          "flat_pct": 3.92,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[2487-2689]",
+          "flat_steps": 18958,
+          "flat_pct": 3.84,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::reduce_pass[256-1385]",
+          "flat_steps": 17440,
+          "flat_pct": 3.53,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::packing::unpack_512[479-906]{NotSpecialized, NonZero(12289), NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "flat_steps": 14912,
+          "flat_pct": 3.02,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[1568-2155]",
+          "flat_steps": 11930,
+          "flat_pct": 2.42,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::falcon::verify_512_direct[1091-1205]",
+          "flat_steps": 10768,
+          "flat_pct": 2.18,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt_core[852-1109]",
+          "flat_steps": 10512,
+          "flat_pct": 2.13,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[2026-2121]",
+          "flat_steps": 10368,
+          "flat_pct": 2.1,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[1264-1521]",
+          "flat_steps": 9840,
+          "flat_pct": 1.99,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[1128-1201]",
+          "flat_steps": 7694,
+          "flat_pct": 1.56,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[2125-2308]",
+          "flat_steps": 7184,
+          "flat_pct": 1.46,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]{NotSpecialized, NotSpecialized, 2, NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, }",
+          "flat_steps": 6744,
+          "flat_pct": 1.37,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::split_level[365-1555]",
+          "flat_steps": 3984,
+          "flat_pct": 0.81,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[1876-2327]",
+          "flat_steps": 3478,
+          "flat_pct": 0.7,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::merge_level[385-1863]",
+          "flat_steps": 3213,
+          "flat_pct": 0.65,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hashing::hash_to_point::hash_to_point_shake_512[2933-3227]",
+          "flat_steps": 848,
+          "flat_pct": 0.17,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::intt[1271-1685]",
+          "flat_steps": 743,
+          "flat_pct": 0.15,
+          "harness": false
+        },
+        {
+          "function": "pqbench_ntt::engine::ntt_core[1289-1869]",
+          "flat_steps": 598,
+          "flat_pct": 0.12,
+          "harness": false
+        },
+        {
+          "function": "pqbench_falcon_512::hashing::shake256::keccak_f1600",
+          "flat_steps": 585,
+          "flat_pct": 0.12,
+          "harness": false
+        }
+      ]
+    },
+    {
       "key": "falcon_512_poseidon",
       "label": "Falcon-512 Poseidon (native)",
       "family": "lattice (NTRU)",
@@ -693,8 +883,8 @@
       "verify_l2_gas": 26488669,
       "verify_steps": 237462,
       "verify_builtins": {
-        "range_check": 34407,
-        "poseidon": 19
+        "poseidon": 19,
+        "range_check": 34407
       },
       "calldata_l2_gas": 455680,
       "pct_of_gas_cap": 26.4887,
