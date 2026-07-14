@@ -17,7 +17,7 @@ a standalone project and must read as one.
 crates/
   bench_interface/      # the PqSignatureVerifier trait + validation-cap constants
   ecdsa_stark/          # verifier crate: classical control (cost reference, not PQ)
-  falcon_512/           # verifier crate: Falcon-512 — BLAKE2s hint+direct, SHAKE-256, Poseidon
+  falcon_512/           # verifier crate: Falcon-512 — BLAKE2s hint+direct, SHAKE-256 hint+direct, Poseidon
   ml_dsa_44/            # verifier crate: stub
   poseidon_wots/        # verifier crate: stub
   ntt/                  # component crate: shared lazy-reduction NTT engine

@@ -77,6 +77,25 @@
       "notes": "Standards-compliant hash-to-point: SHAKE-256 exactly per the Falcon spec, so signatures interoperate with any compliant signer (e.g. falcon.py) without a custom XOF. Same hint-based verify as falcon_512. On-chain cost is dominated by a pure-Cairo Keccak-f[1600] (flat unrolled rounds, lazy squeeze), at roughly 2.4x the non-standard variants \u2014 within both validation caps, so the standard variant is deployable. A native keccak_f1600 syscall (SNIP-32) would close the remaining gap."
     },
     {
+      "key": "falcon_512_shake_direct",
+      "label": "Falcon-512 SHAKE-256 direct (standard, no hint)",
+      "family": "lattice (NTRU)",
+      "package": "pqbench_falcon_512",
+      "verify_test": "bench_verify_falcon_512_shake_direct",
+      "baseline_test": "bench_baseline_falcon_512_shake_direct",
+      "validate_test": "bench_validate_falcon_512_shake_direct",
+      "validate_baseline_test": "bench_validate_base_falcon_512_shake_direct",
+      "contract": "Falcon512ShakeDirectAccount",
+      "nist_category": "1",
+      "standardized": "draft (FIPS 206); standard SHAKE-256 hash-to-point",
+      "on_chain_hash": "SHAKE-256 hash-to-point (on-chain, pure-Cairo Keccak-f[1600])",
+      "offchain_prep": "none beyond signing (no hint)",
+      "sig_felts": 31,
+      "pubkey_felts": 29,
+      "implemented": true,
+      "notes": "The closest on-chain match to a bare standard Falcon signature: standard SHAKE-256 hash-to-point with the hint-free direct core (s1*h computed on-chain), so only the 31-felt s1||salt is supplied and the input trust surface is minimal. The FIPS signature carries no hint, so this variant mirrors it most faithfully. The most expensive Falcon variant here (SHAKE hash over the direct core), still within both validation caps."
+    },
+    {
       "key": "falcon_512_poseidon",
       "label": "Falcon-512 Poseidon (native)",
       "family": "lattice (NTRU)",

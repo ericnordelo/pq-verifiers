@@ -13,7 +13,8 @@ and browser dapps like Voyager, see [`SEPOLIA.md`](SEPOLIA.md).
 
 - `contracts/`: Cairo account contracts. `src/accounts/` holds one account per verifier
   scheme (`EcdsaStarkAccount`, `Falcon512Account`, `Falcon512DirectAccount`,
-  `Falcon512ShakeAccount`, `Falcon512PoseidonAccount`), each implementing the account
+  `Falcon512ShakeAccount`, `Falcon512ShakeDirectAccount`, `Falcon512PoseidonAccount`), each
+  implementing the account
   entrypoints used by Starknet (`__execute__`, `__validate__`, `__validate_declare__`,
   `__validate_deploy__`, `is_valid_signature`, `supports_interface`); `src/utils/` holds
   the shared account interfaces, the execution/validation helpers, and the reusable

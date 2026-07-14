@@ -47,6 +47,16 @@ fn signature_direct() -> Array<felt252> {
     out
 }
 
+/// The SHAKE direct signature: the 31-felt `s1 ‖ salt` prefix of the SHAKE hint fixture.
+fn signature_shake_direct() -> Array<felt252> {
+    let mut out = array![];
+    let mut prefix = shake::signature().span().slice(0, 31);
+    while let Some(f) = prefix.pop_front() {
+        out.append(*f);
+    }
+    out
+}
+
 #[test]
 fn bench_validate_base_ecdsa_stark() {
     let key_pair = KEY_PAIR();
@@ -141,6 +151,25 @@ fn bench_validate_falcon_512_poseidon() {
     let address = declare_and_deploy("Falcon512PoseidonAccount", falcon_poseidon_calldata());
     start_cheat_transaction_hash_global(poseidon::msg());
     start_cheat_signature_global(poseidon::signature().span());
+    let dispatcher = IValidateBenchDispatcher { contract_address: address };
+    let result = dispatcher.validate();
+    assert!(result == starknet::VALIDATED);
+}
+
+#[test]
+fn bench_validate_base_falcon_512_shake_direct() {
+    let address = declare_and_deploy("Falcon512ShakeDirectAccount", falcon_shake_calldata());
+    start_cheat_transaction_hash_global(shake::msg());
+    start_cheat_signature_global(signature_shake_direct().span());
+    let _dispatcher = IValidateBenchDispatcher { contract_address: address };
+    assert!(signature_shake_direct().len() == 31);
+}
+
+#[test]
+fn bench_validate_falcon_512_shake_direct() {
+    let address = declare_and_deploy("Falcon512ShakeDirectAccount", falcon_shake_calldata());
+    start_cheat_transaction_hash_global(shake::msg());
+    start_cheat_signature_global(signature_shake_direct().span());
     let dispatcher = IValidateBenchDispatcher { contract_address: address };
     let result = dispatcher.validate();
     assert!(result == starknet::VALIDATED);

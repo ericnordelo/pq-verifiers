@@ -1,5 +1,5 @@
-//! Falcon-512 (FN-DSA) signature verifiers: BLAKE2s hint and direct variants, a standard
-//! SHAKE-256 hint variant, and a Poseidon hint variant.
+//! Falcon-512 (FN-DSA) signature verifiers: BLAKE2s hint and direct variants, standard
+//! SHAKE-256 hint and direct variants, and a Poseidon hint variant.
 //!
 //! Verification runs entirely on-chain: the message point is derived from `message_hash`
 //! and the signature salt via a hash-to-point XOF (BLAKE2s counter-mode, standard
@@ -148,5 +148,35 @@ pub impl Falcon512PoseidonVerifier of PqSignatureVerifier {
             None => { return false; },
         };
         falcon::verify_512_with_hint(s1.span(), h_ntt.span(), mul_hint.span(), msg_point.span())
+    }
+}
+
+/// Standard SHAKE-256 direct variant: the SHAKE-256 hash-to-point of
+/// [`Falcon512ShakeVerifier`] over the hint-free core of [`Falcon512DirectVerifier`]
+/// (`s1*h = INTT(NTT(s1) ∘ h_ntt)`, 31-felt signature). This is the closest on-chain match to
+/// a bare standard Falcon signature: standard hash, one short polynomial, and no
+/// signer-supplied product, so the smallest input trust surface. It is the most expensive
+/// Falcon variant here (standard SHAKE hash-to-point over the direct core) but still fits
+/// both validation caps.
+pub impl Falcon512ShakeDirectVerifier of PqSignatureVerifier {
+    fn verify(message_hash: felt252, public_key: Span<felt252>, signature: Span<felt252>) -> bool {
+        if public_key.len() != PUBKEY_FELTS || signature.len() != SIG_FELTS_DIRECT {
+            return false;
+        }
+        let h_ntt = match packing::unpack_512(public_key) {
+            Some(v) => v,
+            None => { return false; },
+        };
+        let s1 = match packing::unpack_512(signature.slice(0, 29)) {
+            Some(v) => v,
+            None => { return false; },
+        };
+        let salt_a = *signature.at(29);
+        let salt_b = *signature.at(30);
+        let msg_point = match hash_to_point::hash_to_point_shake_512(message_hash, salt_a, salt_b) {
+            Some(v) => v,
+            None => { return false; },
+        };
+        falcon::verify_512_direct(s1.span(), h_ntt.span(), msg_point.span())
     }
 }
