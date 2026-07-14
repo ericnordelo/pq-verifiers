@@ -37,6 +37,9 @@ divisibility check. The bench fixtures are genuine signatures from the reference
 sampler (`scripts/gen_falcon_fixture.py`, `--variant shake` / `--variant poseidon`);
 tampered variants are rejected in tests.
 
+The hint/direct distinction (how `s1*h` is obtained, and what it does and does not
+affect) is explained in [`HINT_VS_DIRECT.md`](HINT_VS_DIRECT.md).
+
 Implements `PqSignatureVerifier`.
 References: [Falcon spec](https://falcon-sign.info/falcon.pdf) ·
 [s2morrow reference verifier](https://github.com/feltroidprime/s2morrow) ·
