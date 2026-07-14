@@ -63,6 +63,16 @@ fn test_falcon_512_shake_rejects_tampered_salt() {
 }
 
 #[test]
+fn test_falcon_512_shake_rejects_oversized_salt() {
+    let sig = signature();
+    let too_big: felt252 = 0x10000000000000000000000000000000000000000;
+    let oversized_a = with_felt_replaced(sig.span(), 29, too_big);
+    let oversized_b = with_felt_replaced(sig.span(), 30, too_big);
+    assert!(!Falcon512ShakeVerifier::verify(msg(), public_key().span(), oversized_a.span()));
+    assert!(!Falcon512ShakeVerifier::verify(msg(), public_key().span(), oversized_b.span()));
+}
+
+#[test]
 fn test_falcon_512_shake_rejects_tampered_s1() {
     let sig = signature();
     // Swap two canonical s1 felts: still unpacks, but the signature no longer matches.
@@ -114,4 +124,15 @@ fn test_falcon_512_shake_direct_rejects_wrong_message() {
         'OTHER_MSG', public_key().span(), signature_direct().span(),
     );
     assert!(!bad);
+}
+
+
+#[test]
+fn test_falcon_512_shake_direct_rejects_oversized_salt() {
+    let sig = signature_direct();
+    let too_big: felt252 = 0x10000000000000000000000000000000000000000;
+    let oversized_a = with_felt_replaced(sig.span(), 29, too_big);
+    let oversized_b = with_felt_replaced(sig.span(), 30, too_big);
+    assert!(!Falcon512ShakeDirectVerifier::verify(msg(), public_key().span(), oversized_a.span()));
+    assert!(!Falcon512ShakeDirectVerifier::verify(msg(), public_key().span(), oversized_b.span()));
 }

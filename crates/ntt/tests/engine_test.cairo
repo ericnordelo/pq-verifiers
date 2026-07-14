@@ -12,6 +12,7 @@ use pqbench_ntt::falcon512::{
     PRODUCT_BITS, PRODUCT_BOUND_FELT, Q, REDUCED_BITS, config, config_for_degree,
 };
 use pqbench_ntt::roots::{get_even_roots, get_even_roots_inv};
+use pqbench_ntt::{ntt_falcon512_fast_u16_unchecked, ntt_falcon512_fast_unchecked};
 
 // --- Recursive oracle (test-local reference implementation) ---
 
@@ -248,6 +249,35 @@ fn test_config_matches_config_for_degree() {
     let a = ntt(to_felts(f.span()).span(), @table_cfg);
     let b = ntt(to_felts(f.span()).span(), @computed_cfg);
     assert_eq!(a, b);
+}
+
+/// The generated fixed-parameter circuit must agree with the generic engine on
+/// pseudorandom and worst-case canonical inputs.
+#[test]
+fn test_falcon512_fast_matches_generic() {
+    let cfg = config();
+    let mut seed: u64 = 19;
+    while seed != 22 {
+        let input_u16 = pseudorandom(seed, 512);
+        let input = to_felts(input_u16.span());
+        let expected = ntt(input.span(), @cfg);
+        let got = ntt_falcon512_fast_unchecked(input.span());
+        assert_eq!(got, expected);
+        assert_felts_eq_u16(
+            expected.span(), ntt_falcon512_fast_u16_unchecked(input_u16.span()).span(),
+        );
+        seed += 1;
+    }
+
+    let mut worst: Array<felt252> = array![];
+    let mut worst_u16: Array<u16> = array![];
+    for _ in 0_u32..512 {
+        worst.append((Q - 1).into());
+        worst_u16.append(Q - 1);
+    }
+    let expected = ntt(worst.span(), @cfg);
+    assert_eq!(ntt_falcon512_fast_unchecked(worst.span()), expected);
+    assert_felts_eq_u16(expected.span(), ntt_falcon512_fast_u16_unchecked(worst_u16.span()).span());
 }
 
 // --- The lazy-product path used by the direct Falcon variant ---

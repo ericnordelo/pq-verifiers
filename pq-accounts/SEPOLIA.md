@@ -68,9 +68,10 @@ pq-accounts execute --scheme falcon-512-shake --account 0xYOUR_ACCOUNT \
 pq-accounts status --address 0xYOUR_ACCOUNT
 ```
 
-Falcon validation consumes tens of millions of L2 gas per transaction, so expect real
-STRK fees (roughly 0.1 STRK scale at a 1 gwei-FRI gas price). See
-[What transactions cost](USAGE.md#what-transactions-cost) for per-scheme figures.
+Falcon validation consumes meaningful L2 gas, so expect real STRK fees. Use the CLI's
+live receipt output with the network's current gas price; [What transactions
+cost](USAGE.md#what-transactions-cost) explains the receipt meter and lists
+devnet-measured values per scheme.
 
 ## 4. Transact from a browser dapp (Voyager)
 

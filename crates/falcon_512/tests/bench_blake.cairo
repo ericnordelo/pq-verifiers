@@ -14,6 +14,11 @@ use pqbench_falcon_512::fixtures::blake::{msg, public_key, signature};
 use pqbench_falcon_512::{Falcon512DirectVerifier, Falcon512Verifier};
 use pqbench_interface::PqSignatureVerifier;
 
+/// Q^9, the first value outside a canonical full packed half.
+const NONCANONICAL_PACKED_HALF: felt252 = 6392178558614694273495691177456939009;
+/// 2^160, the first salt-half value that does not fit the 20-byte encoding.
+const OVERSIZED_SALT: felt252 = 0x10000000000000000000000000000000000000000;
+
 /// Direct-variant signature: the s1 || salt prefix of the fixture signature.
 fn signature_direct() -> Array<felt252> {
     let mut out: Array<felt252> = array![];
@@ -75,6 +80,16 @@ fn test_falcon_512_direct_rejects_tampering() {
     assert!(!Falcon512DirectVerifier::verify(msg(), pk.span(), signature().span()));
 }
 
+#[test]
+fn test_falcon_512_direct_rejects_noncanonical_packing() {
+    let pk = public_key();
+    let sig = signature_direct();
+    let noncanonical_pk = with_felt_replaced(pk.span(), 0, NONCANONICAL_PACKED_HALF);
+    let noncanonical_s1 = with_felt_replaced(sig.span(), 0, NONCANONICAL_PACKED_HALF);
+    assert!(!Falcon512DirectVerifier::verify(msg(), noncanonical_pk.span(), sig.span()));
+    assert!(!Falcon512DirectVerifier::verify(msg(), pk.span(), noncanonical_s1.span()));
+}
+
 /// Copy of `src` with `src[index]` replaced by `value`.
 fn with_felt_replaced(mut src: Span<felt252>, index: u32, value: felt252) -> Array<felt252> {
     let mut out: Array<felt252> = array![];
@@ -104,9 +119,7 @@ fn test_falcon_512_rejects_tampered_s1() {
     let tampered = with_felt_replaced(with_felt_replaced(sig.span(), 0, b).span(), 1, a);
     assert!(!Falcon512Verifier::verify(msg(), public_key().span(), tampered.span()));
     // Non-canonical s1 encoding (packed half overflows Q^9).
-    let noncanonical = with_felt_replaced(
-        signature().span(), 0, 6392178558614694273495691177456939009,
-    );
+    let noncanonical = with_felt_replaced(signature().span(), 0, NONCANONICAL_PACKED_HALF);
     assert!(!Falcon512Verifier::verify(msg(), public_key().span(), noncanonical.span()));
 }
 
@@ -117,6 +130,8 @@ fn test_falcon_512_rejects_tampered_hint() {
     let b = *sig.span().at(32);
     let tampered = with_felt_replaced(with_felt_replaced(sig.span(), 31, b).span(), 32, a);
     assert!(!Falcon512Verifier::verify(msg(), public_key().span(), tampered.span()));
+    let noncanonical = with_felt_replaced(sig.span(), 31, NONCANONICAL_PACKED_HALF);
+    assert!(!Falcon512Verifier::verify(msg(), public_key().span(), noncanonical.span()));
 }
 
 #[test]
@@ -128,12 +143,29 @@ fn test_falcon_512_rejects_tampered_salt() {
 }
 
 #[test]
+fn test_falcon_512_rejects_oversized_salt() {
+    let pk = public_key();
+    let sig = signature();
+    let sig_direct = signature_direct();
+    let oversized_hint_a = with_felt_replaced(sig.span(), 29, OVERSIZED_SALT);
+    let oversized_hint_b = with_felt_replaced(sig.span(), 30, OVERSIZED_SALT);
+    let oversized_direct_a = with_felt_replaced(sig_direct.span(), 29, OVERSIZED_SALT);
+    let oversized_direct_b = with_felt_replaced(sig_direct.span(), 30, OVERSIZED_SALT);
+    assert!(!Falcon512Verifier::verify(msg(), pk.span(), oversized_hint_a.span()));
+    assert!(!Falcon512Verifier::verify(msg(), pk.span(), oversized_hint_b.span()));
+    assert!(!Falcon512DirectVerifier::verify(msg(), pk.span(), oversized_direct_a.span()));
+    assert!(!Falcon512DirectVerifier::verify(msg(), pk.span(), oversized_direct_b.span()));
+}
+
+#[test]
 fn test_falcon_512_rejects_tampered_public_key() {
     let pk = public_key();
     let a = *pk.span().at(0);
     let b = *pk.span().at(1);
     let tampered = with_felt_replaced(with_felt_replaced(pk.span(), 0, b).span(), 1, a);
     assert!(!Falcon512Verifier::verify(msg(), tampered.span(), signature().span()));
+    let noncanonical = with_felt_replaced(pk.span(), 0, NONCANONICAL_PACKED_HALF);
+    assert!(!Falcon512Verifier::verify(msg(), noncanonical.span(), signature().span()));
 }
 
 #[test]

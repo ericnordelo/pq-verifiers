@@ -24,8 +24,9 @@ Validation is capped at 1,000,000 steps and 100,000,000 L2 gas (blockifier v0.13
 both unchanged as of Starknet 0.14.3), so a verifier has to fit under both.
 
 These are resource measurements — steps and builtins priced with the protocol gas table.
-Transaction **fees** meter L2 gas differently for Sierra ≥ 1.7 classes and run roughly
-twice these values on this workload; receipt-measured costs per deployed account are in
+Transaction **fees** meter L2 gas differently for Sierra ≥ 1.7 classes and run between
+about 1.7× and 2.7× these values, depending on the variant. The CLI prints live receipt
+gas; the fee meter and devnet-measured receipts per scheme are documented in
 [`pq-accounts/USAGE.md`](pq-accounts/USAGE.md#what-transactions-cost).
 
 ## Snapshot
@@ -37,32 +38,36 @@ Current efficiency of every measured entry, per crate (the values pinned in
 | Crate | Measurement | L2 gas | Steps | % of gas cap |
 |---|---|--:|--:|--:|
 | [`ecdsa_stark`](crates/ecdsa_stark) | verify (classical control) | 30,855 | 152 | 0.03% |
-| [`falcon_512`](crates/falcon_512) | verify, hint variant (BLAKE2s) | 26,611,400 | 239,795 | 26.6% |
-| [`falcon_512`](crates/falcon_512) | verify, direct variant (BLAKE2s) | 31,118,060 | 284,834 | 31.1% |
-| [`falcon_512`](crates/falcon_512) | verify, Poseidon variant (native) | 26,488,669 | 237,462 | 26.5% |
-| [`falcon_512`](crates/falcon_512) | verify, SHAKE-256 variant (standard) | 63,965,138 | 447,823 | 64.0% |
-| [`falcon_512`](crates/falcon_512) | verify, SHAKE-256 direct variant (standard) | 68,471,798 | 492,859 | 68.5% |
+| [`falcon_512`](crates/falcon_512) | verify, hint variant (BLAKE2s) | 12,809,640 | 104,854 | 12.8% |
+| [`falcon_512`](crates/falcon_512) | verify, direct variant (BLAKE2s) | 23,005,760 | 205,781 | 23.0% |
+| [`falcon_512`](crates/falcon_512) | verify, Poseidon variant (native) | 12,045,449 | 97,681 | 12.0% |
+| [`falcon_512`](crates/falcon_512) | verify, SHAKE-256 variant (standard) | 50,163,668 | 312,892 | 50.2% |
+| [`falcon_512`](crates/falcon_512) | verify, SHAKE-256 direct variant (standard) | 60,359,788 | 413,819 | 60.4% |
 | [`bench_targets`](crates/bench_targets) | ECDSA-STARK account, inside `__validate__` | 160,795 | 1,437 | 0.16% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 hint account, inside `__validate__` | 28,181,860 | 254,065 | 28.2% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 direct account, inside `__validate__` | 32,637,610 | 298,618 | 32.6% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 Poseidon account, inside `__validate__` | 28,059,129 | 251,731 | 28.1% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 SHAKE-256 account, inside `__validate__` | 65,535,198 | 462,088 | 65.5% |
-| [`bench_targets`](crates/bench_targets) | Falcon-512 SHAKE-256 direct account, inside `__validate__` | 69,990,948 | 506,638 | 70.0% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 hint account, inside `__validate__` | 14,380,100 | 119,124 | 14.4% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 direct account, inside `__validate__` | 24,525,310 | 219,565 | 24.5% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 Poseidon account, inside `__validate__` | 13,615,909 | 111,950 | 13.6% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 SHAKE-256 account, inside `__validate__` | 51,733,728 | 327,157 | 51.7% |
+| [`bench_targets`](crates/bench_targets) | Falcon-512 SHAKE-256 direct account, inside `__validate__` | 61,878,938 | 427,598 | 61.9% |
 | [`ntt`](crates/ntt) | forward 512-point transform | 8,895,740 | 81,826 | 8.9% |
 | [`ntt`](crates/ntt) | forward transform, unreduced output | 7,832,270 | 73,587 | 7.8% |
+| [`ntt`](crates/ntt) | generated Falcon-512 transform, felt input | 2,137,010 | 15,635 | 2.1% |
+| [`ntt`](crates/ntt) | generated Falcon-512 transform, `u16` input | 2,137,010 | 15,635 | 2.1% |
 | [`ntt`](crates/ntt) | forward + inverse roundtrip | 22,725,980 | 211,044 | 22.7% |
 | [`ml_dsa_44`](crates/ml_dsa_44) | verify | stub (not yet measured) | — | — |
 | [`poseidon_wots`](crates/poseidon_wots) | verify | stub (not yet measured) | — | — |
 
 ECDSA-STARK is the classical scheme in use today, a cost reference rather than a PQ
 candidate. Falcon-512 is the first PQ verifier measured, in five variants that share one
-NTT-domain public key and hint-based core: two forward NTTs on the shared lazy-reduction NTT
-engine [`crates/ntt`](crates/ntt) (felt252 butterflies), taken unreduced — the verifier folds
-the final reduction into its pointwise divisibility check instead of paying reduction passes.
-The two direct variants (`falcon_512_direct`, `falcon_512_shake_direct`) instead compute
-`INTT(NTT(s1) ∘ h_ntt)`, trading the inverse transform for half the signature calldata (31 vs
-60 felts) and no signer-supplied hint, at a ~17% core premium. The variants otherwise differ
-only in the on-chain hash-to-point that binds the message:
+NTT-domain public key and a canonical 29-felt base-Q encoding. Packed coefficients are
+validated and decoded directly to `u16`. The hint variants use two generated, fully unrolled
+Falcon-512 forward transforms from the shared [`ntt`](crates/ntt) crate, followed by a fused
+pointwise hint check and norm pass. The two direct variants (`falcon_512_direct`,
+`falcon_512_shake_direct`) instead compute `INTT(NTT(s1) ∘ h_ntt)`, using the generated
+forward transform and the generic inverse engine. They trade a more expensive inverse
+transform for almost half the signature calldata (31 vs 60 felts) and no signer-supplied
+hint. The variants otherwise differ only in the on-chain hash-to-point that binds the
+message:
 
 - **BLAKE2s** (hint and direct): a non-standard XOF swap via the `core::blake` builtin.
   Nearly the cheapest, but needs a matching signer.
@@ -71,25 +76,29 @@ only in the on-chain hash-to-point that binds the message:
   arithmetic. Also non-standard.
 - **SHAKE-256**: the standard Falcon hash-to-point, interoperable with any compliant signer
   (e.g. falcon.py). The pure-Cairo Keccak-f[1600] (flat unrolled rounds, u128 lanes, lazy
-  block squeezing) keeps hash-to-point around 0.2M steps, so even the standards-compliant
-  variant fits both validation caps — at ~2.4× the cost of the non-standard ones. A native
+  block squeezing) dominates this backend, so even the standards-compliant variant fits
+  both validation caps. Its bare hint verifier uses about 4.2× the gas and 3.2× the steps
+  of the native-Poseidon variant. A native
   `keccak_f1600` syscall ([SNIP-32](https://github.com/starknet-io/SNIPs)) would close the
   remaining gap. It comes in hint and direct forms; `falcon_512_shake_direct` carries no
   hint, mirroring a bare FIPS signature most closely, and is the most expensive of the five.
 
 All five use genuine falcon.py-signed fixtures and fit the validation caps — the non-standard
-variants with wide margin, SHAKE-256 at about two-thirds of the gas cap and under half the
-step cap.
+variants with wide margin, and the SHAKE-256 accounts at 51.7–61.9% of the gas cap and
+32.7–42.8% of the step cap.
 
 All five derive the message point on-chain from `message_hash`, which binds the signature to
-the message. The reference Starknet Falcon verifier
-[s2morrow](https://github.com/feltroidprime/s2morrow) instead takes the point as precomputed
-calldata and multiplies in the coefficient domain (three transforms); these verifiers derive
-the point on-chain and store the public key in the NTT domain (two transforms), so they do
-strictly more security-relevant work while keeping the polynomial arithmetic cheaper. Each
-variant also has an account contract measured inside `__validate__`, where the realistic cost
-sits just above bare verify (the verifier dominates; dispatch, the 29-slot key read, and
-deserialization are small). The remaining PQ verifiers are stubs behind the same interface.
+the message. At s2morrow commit `4eff9ab`, its packed Poseidon verifier measures 81,212 steps
+with Scarb 2.15.1 and Starknet Foundry 0.55.0, versus 97,681 here with Scarb 2.18.0 and
+Starknet Foundry 0.59.0. That comparison is directional, not protocol-equivalent:
+[s2morrow](https://github.com/feltroidprime/s2morrow) uses a different Poseidon
+absorb-and-extract construction, while this verifier preserves its existing 16-bit-word
+rejection stream. The NTT and packing costs here are already comparable to or below
+s2morrow's; the remaining gap is concentrated in hash-to-point and the fused verification
+core. Each variant also has an account contract measured inside `__validate__`, where the
+realistic cost sits just above bare verify (the verifier dominates; dispatch, the 29-slot key
+read, and deserialization are small). The remaining PQ verifiers are stubs behind the same
+interface.
 
 ## Try the accounts
 
@@ -157,7 +166,7 @@ crates/
   falcon_512/
   ml_dsa_44/
   poseidon_wots/
-  ntt/               # shared lazy-reduction NTT engine (used by the lattice schemes)
+  ntt/               # generic NTT engine + generated Falcon-512 forward path
   bench_targets/     # one account contract per verifier, for the validate scenario
 scripts/             # run_bench.py, profile.py, gen_report.py, check_efficiency.py
 schemes.json         # the scheme registry

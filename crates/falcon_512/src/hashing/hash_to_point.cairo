@@ -27,6 +27,9 @@
 
 use core::blake::{blake2s_compress, blake2s_finalize};
 use core::poseidon::hades_permutation;
+use corelib_imports::bounded_int::{
+    BoundedInt, DivRemHelper, UnitInt, bounded_int_div_rem, downcast, upcast,
+};
 use super::shake256::keccak_f1600;
 
 /// blake2s-256 initial state: the BLAKE2s IV with the standard parameter word
@@ -43,6 +46,64 @@ const TWO_POW_160: u256 = 0x10000000000000000000000000000000000000000_u256;
 
 /// Total bytes hashed per counter block: 40 (salt) + 32 (message hash) + 4 (counter).
 const HASH_INPUT_BYTES: u32 = 76;
+
+// Exact bounds for reading a felt's low 240 bits as little-endian 16-bit words.
+// Each division peels one word; the final quotient after seven divisions is itself
+// one 16-bit word for the low half and is discarded for the high half.
+type Word16 = BoundedInt<0, 65535>;
+type AcceptedWord = BoundedInt<0, 61444>;
+type Base16 = UnitInt<65536>;
+type Quot112 = BoundedInt<0, 5192296858534827628530496329220095>;
+type Quot96 = BoundedInt<0, 79228162514264337593543950335>;
+type Quot80 = BoundedInt<0, 1208925819614629174706175>;
+type Quot64 = BoundedInt<0, 18446744073709551615>;
+type Quot48 = BoundedInt<0, 281474976710655>;
+type Quot32 = BoundedInt<0, 4294967295>;
+type PoseidonQ = UnitInt<12289>;
+type PoseidonZq = BoundedInt<0, 12288>;
+
+const BASE16_NZ: NonZero<Base16> = 65536;
+const POSEIDON_Q_NZ: NonZero<PoseidonQ> = 12289;
+
+impl DivRemU128ByBase16 of DivRemHelper<u128, Base16> {
+    type DivT = Quot112;
+    type RemT = Word16;
+}
+
+impl DivRemQuot112ByBase16 of DivRemHelper<Quot112, Base16> {
+    type DivT = Quot96;
+    type RemT = Word16;
+}
+
+impl DivRemQuot96ByBase16 of DivRemHelper<Quot96, Base16> {
+    type DivT = Quot80;
+    type RemT = Word16;
+}
+
+impl DivRemQuot80ByBase16 of DivRemHelper<Quot80, Base16> {
+    type DivT = Quot64;
+    type RemT = Word16;
+}
+
+impl DivRemQuot64ByBase16 of DivRemHelper<Quot64, Base16> {
+    type DivT = Quot48;
+    type RemT = Word16;
+}
+
+impl DivRemQuot48ByBase16 of DivRemHelper<Quot48, Base16> {
+    type DivT = Quot32;
+    type RemT = Word16;
+}
+
+impl DivRemQuot32ByBase16 of DivRemHelper<Quot32, Base16> {
+    type DivT = Word16;
+    type RemT = Word16;
+}
+
+impl DivRemAcceptedWordByPoseidonQ of DivRemHelper<AcceptedWord, PoseidonQ> {
+    type DivT = BoundedInt<0, 4>;
+    type RemT = PoseidonZq;
+}
 
 /// Hash `(message_hash, salt)` to 512 coefficients in `[0, Q)`.
 /// Returns `None` if either salt felt exceeds 20 bytes.
@@ -215,15 +276,12 @@ pub fn hash_to_point_poseidon_512(
     if sa >= TWO_POW_160 || sb >= TWO_POW_160 {
         return None;
     }
-    let q32: NonZero<u32> = 12289_u32.try_into().unwrap();
-    let two64: NonZero<u128> = 0x10000000000000000_u128.try_into().unwrap();
-    let two16: NonZero<u64> = 0x10000_u64.try_into().unwrap();
     // Absorb the three inputs, then squeeze the rate elements two felts at a time.
     let (mut s0, mut s1, mut s2) = hades_permutation(salt_a, salt_b, message_hash);
     let mut coeffs: Array<u16> = array![];
     while coeffs.len() != 512 {
-        push_felt_words(s0, two64, two16, q32, ref coeffs);
-        push_felt_words(s1, two64, two16, q32, ref coeffs);
+        push_felt_words(s0, ref coeffs);
+        push_felt_words(s1, ref coeffs);
         if coeffs.len() == 512 {
             break;
         }
@@ -236,45 +294,65 @@ pub fn hash_to_point_poseidon_512(
 }
 
 /// Read the low 240 bits of `felt` as 15 little-endian 16-bit candidate words — 8 from
-/// the low 128-bit half and 7 from the high half. Each half is first split into 64-bit
-/// legs so the per-word divisions run at u64 width.
-fn push_felt_words(
-    felt: felt252,
-    two64: NonZero<u128>,
-    two16: NonZero<u64>,
-    q32: NonZero<u32>,
-    ref coeffs: Array<u16>,
-) {
+/// the low 128-bit half and 7 from the high half.
+fn push_felt_words(felt: felt252, ref coeffs: Array<u16>) {
     let v: u256 = felt.into();
-    let (lo_hi, lo_lo) = DivRem::div_rem(v.low, two64);
-    push_leg_words4(lo_lo.try_into().unwrap(), two16, q32, ref coeffs);
-    push_leg_words4(lo_hi.try_into().unwrap(), two16, q32, ref coeffs);
-    let (hi_hi, hi_lo) = DivRem::div_rem(v.high, two64);
-    push_leg_words4(hi_lo.try_into().unwrap(), two16, q32, ref coeffs);
-    push_leg_words3(hi_hi.try_into().unwrap(), two16, q32, ref coeffs);
+    push_u128_words8(v.low, ref coeffs);
+    push_u128_words7(v.high, ref coeffs);
 }
 
-/// Feed a 64-bit leg's four 16-bit words, low first, as rejection-sampled candidates.
+/// Feed all eight 16-bit words of a u128, low first, as rejection-sampled candidates.
 #[inline(always)]
-fn push_leg_words4(leg: u64, two16: NonZero<u64>, q32: NonZero<u32>, ref coeffs: Array<u16>) {
-    let (rest, w0) = DivRem::div_rem(leg, two16);
-    let (rest, w1) = DivRem::div_rem(rest, two16);
-    let (w3, w2) = DivRem::div_rem(rest, two16);
-    push_candidate(w0.try_into().unwrap(), q32, ref coeffs);
-    push_candidate(w1.try_into().unwrap(), q32, ref coeffs);
-    push_candidate(w2.try_into().unwrap(), q32, ref coeffs);
-    push_candidate(w3.try_into().unwrap(), q32, ref coeffs);
+fn push_u128_words8(value: u128, ref coeffs: Array<u16>) {
+    let (q1, w0) = bounded_int_div_rem(value, BASE16_NZ);
+    let (q2, w1) = bounded_int_div_rem(q1, BASE16_NZ);
+    let (q3, w2) = bounded_int_div_rem(q2, BASE16_NZ);
+    let (q4, w3) = bounded_int_div_rem(q3, BASE16_NZ);
+    let (q5, w4) = bounded_int_div_rem(q4, BASE16_NZ);
+    let (q6, w5) = bounded_int_div_rem(q5, BASE16_NZ);
+    let (w7, w6) = bounded_int_div_rem(q6, BASE16_NZ);
+    push_poseidon_candidate(w0, ref coeffs);
+    push_poseidon_candidate(w1, ref coeffs);
+    push_poseidon_candidate(w2, ref coeffs);
+    push_poseidon_candidate(w3, ref coeffs);
+    push_poseidon_candidate(w4, ref coeffs);
+    push_poseidon_candidate(w5, ref coeffs);
+    push_poseidon_candidate(w6, ref coeffs);
+    push_poseidon_candidate(w7, ref coeffs);
 }
 
-/// Feed a leg's low three 16-bit words (the felt's bits 192..240), low first.
+/// Feed the low seven 16-bit words of a u128 and discard its remaining high 16 bits.
 #[inline(always)]
-fn push_leg_words3(leg: u64, two16: NonZero<u64>, q32: NonZero<u32>, ref coeffs: Array<u16>) {
-    let (rest, w0) = DivRem::div_rem(leg, two16);
-    let (rest, w1) = DivRem::div_rem(rest, two16);
-    let (_, w2) = DivRem::div_rem(rest, two16);
-    push_candidate(w0.try_into().unwrap(), q32, ref coeffs);
-    push_candidate(w1.try_into().unwrap(), q32, ref coeffs);
-    push_candidate(w2.try_into().unwrap(), q32, ref coeffs);
+fn push_u128_words7(value: u128, ref coeffs: Array<u16>) {
+    let (q1, w0) = bounded_int_div_rem(value, BASE16_NZ);
+    let (q2, w1) = bounded_int_div_rem(q1, BASE16_NZ);
+    let (q3, w2) = bounded_int_div_rem(q2, BASE16_NZ);
+    let (q4, w3) = bounded_int_div_rem(q3, BASE16_NZ);
+    let (q5, w4) = bounded_int_div_rem(q4, BASE16_NZ);
+    let (q6, w5) = bounded_int_div_rem(q5, BASE16_NZ);
+    let (_, w6) = bounded_int_div_rem(q6, BASE16_NZ);
+    push_poseidon_candidate(w0, ref coeffs);
+    push_poseidon_candidate(w1, ref coeffs);
+    push_poseidon_candidate(w2, ref coeffs);
+    push_poseidon_candidate(w3, ref coeffs);
+    push_poseidon_candidate(w4, ref coeffs);
+    push_poseidon_candidate(w5, ref coeffs);
+    push_poseidon_candidate(w6, ref coeffs);
+}
+
+/// Apply the unchanged Falcon rejection rule to one exact 16-bit Poseidon word.
+#[inline(always)]
+fn push_poseidon_candidate(candidate: Word16, ref coeffs: Array<u16>) {
+    if coeffs.len() == 512 {
+        return;
+    }
+    match downcast::<Word16, AcceptedWord>(candidate) {
+        Some(accepted) => {
+            let (_, r) = bounded_int_div_rem(accepted, POSEIDON_Q_NZ);
+            coeffs.append(upcast(r));
+        },
+        None => {},
+    }
 }
 
 /// Little-endian u32 limbs of a u128.

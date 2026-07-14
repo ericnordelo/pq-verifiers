@@ -82,7 +82,7 @@ export async function quickstart(params: QuickstartParams): Promise<QuickstartRe
   if (!funders || funders.length === 0) {
     throw new Error(
       `no devnet at ${params.rpcUrl}. Start one with "starknet-devnet --seed 0" ` +
-        "(quickstart is devnet-only; see USAGE.md for public networks)."
+        "(quickstart is devnet-only; see SEPOLIA.md for public networks)."
     );
   }
   const funder = funders[0]!;
