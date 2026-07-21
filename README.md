@@ -5,6 +5,13 @@
 _Comparing candidate post-quantum signature verifiers for a Starknet account by their
 verification cost._
 
+> [!WARNING]
+> **Experimental and unaudited — do not use in production.** This repository contains
+> research and benchmarking software that has not undergone an independent security audit.
+> The verifiers and account contracts may contain cryptographic or implementation
+> vulnerabilities. Use them only for experimentation and testing until they have been
+> properly audited and explicitly deemed production-ready.
+
 ## Why
 
 Starknet's STARK proofs are post-quantum. The ECDSA signatures that authorize account
