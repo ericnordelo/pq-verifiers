@@ -6,11 +6,7 @@ _Comparing candidate post-quantum signature verifiers for a Starknet account by 
 verification cost._
 
 > [!WARNING]
-> **Experimental and unaudited — do not use in production.** This repository contains
-> research and benchmarking software that has not undergone an independent security audit.
-> The verifiers and account contracts may contain cryptographic or implementation
-> vulnerabilities. Use them only for experimentation and testing until they have been
-> properly audited and explicitly deemed production-ready.
+> **Experimental and unaudited.** This repository is intended for research and benchmarking. The verifiers and account contracts have not undergone an independent security audit. This software is provided on an “as is” and “as available” basis, without warranties or liability for any losses incurred through its use.
 
 ## Why
 
